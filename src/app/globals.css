@@ -1,0 +1,84 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-canvas: #FBFAF6;
+  --color-surface: #FFFFFF;
+  --color-ink: #1B241F;
+  --color-ink-muted: #5E6B62;
+  --color-brand: #0E9E96;
+  --color-cta: #D6FF3D;
+  --color-urgent: #FF6B4A;
+  --color-border: #E6E2D6;
+  --color-success: #1F9D6C;
+  --color-error: #E5484D;
+
+  --radius-card: 16px;
+  --radius-control: 12px;
+  --radius-cta: 9999px;
+
+  --font-display: 'Clash Display', sans-serif;
+  --font-body: 'General Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  color-scheme: light only;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-canvas text-ink font-body;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply rounded-full bg-cta text-ink font-semibold px-6 py-3
+           transition-all active:scale-[0.97]
+           focus-visible:outline-2 focus-visible:outline-ink
+           disabled:opacity-50 disabled:cursor-not-allowed;
+    min-height: 44px;
+  }
+  .btn-secondary {
+    @apply rounded-[12px] border border-border text-ink font-medium px-5 py-2.5
+           transition-all active:scale-[0.97]
+           focus-visible:outline-2 focus-visible:outline-brand
+           hover:bg-border/30;
+    min-height: 44px;
+  }
+  .btn-ghost {
+    @apply text-brand underline-offset-2 hover:underline
+           focus-visible:outline-2 focus-visible:outline-brand;
+    min-height: 44px;
+  }
+  .btn-destructive {
+    @apply rounded-control border border-error text-error font-medium px-5 py-2.5
+           transition-all active:scale-[0.97] hover:bg-error/10
+           focus-visible:outline-2 focus-visible:outline-error;
+    min-height: 44px;
+  }
+  .card-venue {
+    @apply bg-surface rounded-card shadow-card overflow-hidden;
+  }
+  .card-venue-sidebar {
+    @apply border-l-[3px] border-brand;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Skeleton loading */
+.skeleton {
+  @apply bg-border/50 animate-pulse rounded-control;
+}
