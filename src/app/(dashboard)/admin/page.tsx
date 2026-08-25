@@ -1,144 +1,312 @@
 import Link from "next/link"
-import { Building2, CalendarClock, Check, CircleAlert, ImageIcon, MapPin, Phone, WalletCards, X } from "lucide-react"
+import {
+  Building2,
+  CalendarClock,
+  Check,
+  CheckCircle2,
+  CircleAlert,
+  ImageIcon,
+  MapPin,
+  Phone,
+  ShieldCheck,
+  User,
+  WalletCards,
+  X,
+  XCircle,
+} from "lucide-react"
 import { DashboardForm } from "@/components/dashboard/dashboard-form"
 import { Panel, SectionTitle } from "@/components/dashboard/panel"
 import { StatusBadge } from "@/components/dashboard/status-badge"
 import { Button } from "@/components/ui/button"
 import { EmptyState } from "@/components/ui/empty-state"
-import { Metric } from "@/components/ui/metric"
 import { PageHeader } from "@/components/ui/page-header"
 import { approveVenueAction, rejectVenueAction } from "@/lib/dashboard/admin-actions"
 import { getAdminOverview } from "@/lib/dashboard/admin-data"
 import { formatCurrency } from "@/lib/utils"
 
-const dateFormatter = new Intl.DateTimeFormat("id-ID", { dateStyle: "medium", timeStyle: "short" })
+const dateFormatter = new Intl.DateTimeFormat("id-ID", {
+  dateStyle: "medium",
+  timeStyle: "short",
+})
 
 export default async function AdminPage() {
   const overview = await getAdminOverview()
 
   return (
     <main className="space-y-8">
+      {/* Page Header */}
       <PageHeader
-        eyebrow="Operasional hari ini"
-        title="Pusat kendali"
-        description="Verifikasi venue sebelum tayang. Pantau volume transaksi tanpa mengubah catatan pembayaran."
+        eyebrow="Operasional & Moderasi"
+        title="Pusat Kendali Admin"
+        description="Verifikasi kelayakan venue mitra sebelum tayang di marketplace dan pantau kesehatan volume transaksi."
         actions={
-          <Button asChild variant="secondary">
-            <Link href="/admin/transactions"><WalletCards aria-hidden="true" /> Lihat transaksi</Link>
+          <Button asChild className="btn-cta text-xs font-bold shadow-xs">
+            <Link href="/admin/transactions">
+              <WalletCards className="size-4" aria-hidden="true" />
+              <span>Monitor Transaksi</span>
+            </Link>
           </Button>
         }
       />
 
-      <section aria-label="Ringkasan platform" className="grid gap-6 border-b border-border pb-8 sm:grid-cols-2 xl:grid-cols-4">
-        <Metric label="Menunggu verifikasi" value={overview.pendingVenues.length} detail="Diproses dari antrean terlama" />
-        <Metric label="Venue aktif" value={overview.approvedVenueCount} detail={`${overview.suspendedVenueCount} venue ditangguhkan`} />
-        <Metric label="Total booking" value={overview.bookingCount} detail={`${overview.totalUserCount} akun terdaftar`} />
-        <Metric label="Pembayaran lunas" value={formatCurrency(overview.settledRevenueRupiah)} detail="Nilai bruto, bukan komisi platform" />
+      {/* Operational KPI Metric HUD Cards */}
+      <section
+        aria-label="Ringkasan platform"
+        className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
+      >
+        <div className="rounded-2xl border border-brand/40 bg-surface p-5 shadow-xs">
+          <div className="flex items-center justify-between text-xs font-bold text-ink-muted">
+            <span>Menunggu Verifikasi</span>
+            <span className="badge-coral text-[0.625rem]">
+              {overview.pendingVenues.length} Antrean
+            </span>
+          </div>
+          <p className="mt-3 font-mono text-3xl font-black text-ink">
+            {overview.pendingVenues.length}
+          </p>
+          <p className="mt-1 text-[0.6875rem] text-ink-muted">Diproses berdasarkan urutan masuk</p>
+        </div>
+
+        <div className="rounded-2xl border border-border bg-surface p-5 shadow-xs">
+          <div className="flex items-center justify-between text-xs font-bold text-ink-muted">
+            <span>Venue Aktif</span>
+            <span className="badge-turf text-[0.625rem]">
+              {overview.approvedVenueCount} Tayang
+            </span>
+          </div>
+          <p className="mt-3 font-mono text-3xl font-black text-ink">
+            {overview.approvedVenueCount}
+          </p>
+          <p className="mt-1 text-[0.6875rem] text-ink-muted">
+            {overview.suspendedVenueCount} venue ditangguhkan
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-border bg-surface p-5 shadow-xs">
+          <div className="flex items-center justify-between text-xs font-bold text-ink-muted">
+            <span>Total Booking Masuk</span>
+            <span className="font-mono text-[0.625rem] font-bold text-brand">
+              {overview.totalUserCount} Pengguna
+            </span>
+          </div>
+          <p className="mt-3 font-mono text-3xl font-black text-ink">
+            {overview.bookingCount}
+          </p>
+          <p className="mt-1 text-[0.6875rem] text-ink-muted">Total reservasi di seluruh arena</p>
+        </div>
+
+        <div className="rounded-2xl border border-border bg-surface p-5 shadow-xs">
+          <div className="flex items-center justify-between text-xs font-bold text-ink-muted">
+            <span>Volume Gross Lunas</span>
+            <span className="badge-optic text-[0.625rem] font-black">GMV</span>
+          </div>
+          <p className="mt-3 font-mono text-2xl font-black text-ink truncate">
+            {formatCurrency(overview.settledRevenueRupiah)}
+          </p>
+          <p className="mt-1 text-[0.6875rem] text-ink-muted">Total pembayaran berhasil diproses</p>
+        </div>
       </section>
 
-      <Panel className="p-0 sm:p-0">
-        <div className="p-5 sm:p-6">
-          <SectionTitle detail={`${overview.pendingVenues.length} dari ${overview.totalVenueCount} venue`}>
-            Antrean verifikasi venue
-          </SectionTitle>
-          <p className="max-w-2xl text-sm leading-6 text-ink-muted">
-            Persetujuan membuka venue ke marketplace. Pastikan lokasi, kontak, foto, dan lapangan aktif sudah layak.
-          </p>
+      {/* Venue Verification Workbench */}
+      <Panel className="p-0 sm:p-0 overflow-hidden">
+        <div className="border-b border-border/80 p-5 sm:p-6 bg-surface-muted/30">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <SectionTitle detail={`${overview.pendingVenues.length} venue butuh tindakan`}>
+                Workbench Verifikasi Venue
+              </SectionTitle>
+              <p className="max-w-2xl text-xs sm:text-sm text-ink-muted">
+                Tinjau kelengkapan informasi, legalitas lokasi, lapangan aktif, dan foto sebelum mengizinkan venue menerima pembayaran dari publik.
+              </p>
+            </div>
+
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-brand/30 bg-brand/10 px-3 py-1 text-xs font-bold text-brand">
+              <ShieldCheck className="size-3.5" />
+              <span>Standar Akurasi 100%</span>
+            </span>
+          </div>
         </div>
 
         {overview.pendingVenues.length === 0 ? (
           <EmptyState
-            className="border-x-0 border-b-0"
-            icon={<Building2 aria-hidden="true" />}
-            title="Antrean sudah bersih"
-            description="Venue baru yang dikirim pemilik akan muncul di sini."
+            className="border-0 py-12"
+            icon={<Building2 className="size-8" aria-hidden="true" />}
+            title="Semua Antrean Verifikasi Bersih"
+            description="Tidak ada pengajuan venue baru yang menunggu review saat ini. Pengajuan baru akan langsung muncul di sini."
           />
         ) : (
-          <div className="divide-y divide-border border-t border-border">
+          <div className="divide-y divide-border/80">
             {overview.pendingVenues.map((venue, index) => {
-              const ready = venue.activeCourtCount > 0 && venue.imageCount > 0 && Boolean(venue.phone)
+              const hasCourts = venue.activeCourtCount > 0
+              const hasImages = venue.imageCount > 0
+              const hasPhone = Boolean(venue.phone)
+              const isFullyReady = hasCourts && hasImages && hasPhone
+
               return (
-                <article key={venue.id} className="grid gap-6 p-5 sm:p-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-3">
-                      <span className="font-mono text-xs font-semibold text-ink-muted">#{String(index + 1).padStart(2, "0")}</span>
+                <article
+                  key={venue.id}
+                  className="grid gap-6 p-5 sm:p-6 xl:grid-cols-[minmax(0,1fr)_22rem] items-start hover:bg-surface-muted/20 transition-colors"
+                >
+                  <div className="min-w-0 space-y-4">
+                    {/* Header meta */}
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      <span className="rounded-md bg-ink px-2 py-0.5 font-mono text-xs font-bold text-white">
+                        #{String(index + 1).padStart(2, "0")}
+                      </span>
                       <StatusBadge status="PENDING" />
                       <time className="text-xs text-ink-muted" dateTime={venue.submittedAt}>
-                        Dikirim {dateFormatter.format(new Date(venue.submittedAt))}
+                        Diajukan {dateFormatter.format(new Date(venue.submittedAt))}
                       </time>
                     </div>
-                    <h2 className="mt-4 text-wrap-balance font-display text-3xl font-bold leading-none tracking-[-0.045em] text-ink sm:text-4xl">
-                      {venue.name}
-                    </h2>
-                    <p className="mt-3 text-sm font-semibold text-ink">{venue.ownerName}</p>
-                    <p className="text-xs text-ink-muted">{venue.ownerEmail}</p>
 
-                    <dl className="mt-6 grid gap-x-6 gap-y-4 border-y border-border py-5 sm:grid-cols-2 lg:grid-cols-3">
-                      <div>
-                        <dt className="flex items-center gap-2 text-xs font-semibold text-ink-muted"><MapPin className="size-4" aria-hidden="true" /> Lokasi</dt>
-                        <dd className="mt-1 text-sm leading-6 text-ink">{venue.address}, {venue.city}, {venue.province}</dd>
+                    {/* Venue title & Owner info */}
+                    <div>
+                      <h2 className="font-display text-2xl sm:text-3xl font-bold text-ink">
+                        {venue.name}
+                      </h2>
+                      <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-ink-muted">
+                        <span className="flex items-center gap-1 font-semibold text-ink">
+                          <User className="size-3 text-brand" />
+                          {venue.ownerName}
+                        </span>
+                        <span>·</span>
+                        <span>{venue.ownerEmail}</span>
                       </div>
+                    </div>
+
+                    {/* Operational Details Grid */}
+                    <dl className="grid gap-4 rounded-2xl border border-border/80 bg-surface-muted/50 p-4 sm:grid-cols-3 text-xs">
                       <div>
-                        <dt className="flex items-center gap-2 text-xs font-semibold text-ink-muted"><CalendarClock className="size-4" aria-hidden="true" /> Jam operasional</dt>
-                        <dd className="mt-1 font-mono text-sm text-ink">{venue.openingTime} - {venue.closingTime}</dd>
+                        <dt className="flex items-center gap-1.5 font-bold text-ink-muted">
+                          <MapPin className="size-3.5 text-brand" />
+                          <span>Lokasi Venue</span>
+                        </dt>
+                        <dd className="mt-1 font-medium text-ink leading-relaxed">
+                          {venue.address}, {venue.city}, {venue.province}
+                        </dd>
                       </div>
+
                       <div>
-                        <dt className="flex items-center gap-2 text-xs font-semibold text-ink-muted"><Phone className="size-4" aria-hidden="true" /> Kontak</dt>
-                        <dd className="mt-1 text-sm text-ink">{venue.phone ?? "Belum diisi"}</dd>
+                        <dt className="flex items-center gap-1.5 font-bold text-ink-muted">
+                          <CalendarClock className="size-3.5 text-brand" />
+                          <span>Jam Operasional</span>
+                        </dt>
+                        <dd className="mt-1 font-mono font-semibold text-ink">
+                          {venue.openingTime} – {venue.closingTime} WIB
+                        </dd>
+                      </div>
+
+                      <div>
+                        <dt className="flex items-center gap-1.5 font-bold text-ink-muted">
+                          <Phone className="size-3.5 text-brand" />
+                          <span>Kontak Pengelola</span>
+                        </dt>
+                        <dd className="mt-1 font-mono font-semibold text-ink">
+                          {venue.phone ?? "Belum diisi"}
+                        </dd>
                       </div>
                     </dl>
 
-                    <div className="mt-5 flex flex-wrap gap-2">
-                      <span className="border border-border px-2.5 py-1.5 text-xs font-semibold text-ink">
-                        {venue.activeCourtCount} lapangan aktif
+                    {/* Facilities & Specs Checklist */}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span
+                        className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-semibold ${
+                          hasCourts
+                            ? "border-success/30 bg-success/10 text-success"
+                            : "border-error/30 bg-error/10 text-error"
+                        }`}
+                      >
+                        {hasCourts ? <CheckCircle2 className="size-3" /> : <XCircle className="size-3" />}
+                        {venue.activeCourtCount} Lapangan Aktif
                       </span>
-                      <span className="flex items-center gap-1.5 border border-border px-2.5 py-1.5 text-xs font-semibold text-ink">
-                        <ImageIcon className="size-3.5" aria-hidden="true" /> {venue.imageCount} foto
+
+                      <span
+                        className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-semibold ${
+                          hasImages
+                            ? "border-success/30 bg-success/10 text-success"
+                            : "border-error/30 bg-error/10 text-error"
+                        }`}
+                      >
+                        <ImageIcon className="size-3" />
+                        {venue.imageCount} Foto Diunggah
                       </span>
-                      {venue.facilities.map((facility) => <span key={facility} className="bg-surface-muted px-2.5 py-1.5 text-xs text-ink-muted">{facility}</span>)}
+
+                      {venue.facilities.map((facility) => (
+                        <span
+                          key={facility}
+                          className="rounded-lg border border-border bg-surface px-2.5 py-1 text-xs text-ink-muted"
+                        >
+                          {facility}
+                        </span>
+                      ))}
                     </div>
 
-                    {!ready ? (
-                      <p className="mt-5 flex gap-2 border-l-2 border-warning pl-3 text-xs leading-5 text-ink-muted">
-                        <CircleAlert className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden="true" />
-                        Checklist belum lengkap. Persetujuan tetap memvalidasi minimal satu lapangan aktif di server.
-                      </p>
-                    ) : null}
+                    {!isFullyReady && (
+                      <div className="flex items-start gap-2 rounded-xl border border-warning/30 bg-warning/10 p-3 text-xs text-ink leading-relaxed">
+                        <CircleAlert className="size-4 shrink-0 text-warning mt-0.5" />
+                        <span>
+                          Checklist belum lengkap. Pastikan minimal 1 lapangan aktif dan nomor telepon sebelum memberikan persetujuan publik.
+                        </span>
+                      </div>
+                    )}
                   </div>
 
-                  <aside className="border-t border-border pt-5 xl:border-l xl:border-t-0 xl:pl-6 xl:pt-0">
-                    <p className="text-sm font-semibold text-ink">Keputusan admin</p>
-                    <p className="mt-1 text-xs leading-5 text-ink-muted">Tindakan tercatat bersama akun admin dan waktu review.</p>
+                  {/* Decision Workbench Panel */}
+                  <aside className="rounded-2xl border border-border bg-surface p-5 shadow-xs space-y-4">
+                    <div>
+                      <p className="font-display text-sm font-bold text-ink">Keputusan Verifikasi</p>
+                      <p className="text-[0.6875rem] text-ink-muted">
+                        Tindakan langsung memperbarui status di database & mengirim notifikasi ke pemilik.
+                      </p>
+                    </div>
+
+                    {/* Approve Action */}
                     <DashboardForm
                       action={approveVenueAction.bind(null, venue.id)}
-                      className="mt-5"
                       disabled={venue.activeCourtCount === 0}
-                      pendingLabel="Menyetujui"
-                      submitLabel="Setujui venue"
+                      pendingLabel="Menyetujui..."
+                      submitLabel="✓ Setujui & Publikasikan"
                     >
-                      <p className="flex items-center gap-2 text-xs font-semibold text-success"><Check className="size-4" aria-hidden="true" /> Publikasikan ke marketplace</p>
+                      <p className="flex items-center gap-1.5 text-xs font-semibold text-success">
+                        <Check className="size-3.5" />
+                        <span>Buka ke Marketplace PadelKu</span>
+                      </p>
                     </DashboardForm>
-                    <details className="group mt-5 border-t border-border pt-5">
-                      <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 text-sm font-semibold text-error marker:content-none [&::-webkit-details-marker]:hidden">
-                        <X className="size-4" aria-hidden="true" /> Tolak pengajuan
+
+                    {/* Reject Action with Reason Templates */}
+                    <details className="group border-t border-border/80 pt-4">
+                      <summary className="flex min-h-9 cursor-pointer list-none items-center justify-between text-xs font-bold text-error marker:content-none hover:underline">
+                        <span className="flex items-center gap-1.5">
+                          <X className="size-3.5" />
+                          <span>Tolak Pengajuan</span>
+                        </span>
+                        <span className="text-[0.625rem] font-normal text-ink-muted">Buka formulir</span>
                       </summary>
+
                       <DashboardForm
                         action={rejectVenueAction.bind(null, venue.id)}
-                        className="mt-3"
-                        pendingLabel="Menolak"
-                        submitLabel="Simpan penolakan"
+                        className="mt-3 space-y-3"
+                        pendingLabel="Menolak..."
+                        submitLabel="Kirim Penolakan"
                         variant="destructive"
                       >
-                        <label className="block text-xs font-semibold text-ink" htmlFor={`reason-${venue.id}`}>Alasan untuk pemilik</label>
-                        <textarea
-                          id={`reason-${venue.id}`}
-                          name="reason"
-                          required
-                          minLength={10}
-                          maxLength={500}
-                          placeholder="Contoh: Foto venue belum memperlihatkan kondisi lapangan secara jelas."
-                          className="min-h-28 w-full resize-y rounded-control border border-border-strong bg-surface p-3 text-sm text-ink placeholder:text-ink-muted focus-visible:border-brand focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-brand/15"
-                        />
+                        <div>
+                          <label
+                            className="block text-xs font-bold text-ink mb-1"
+                            htmlFor={`reason-${venue.id}`}
+                          >
+                            Alasan Penolakan (untuk pemilik)
+                          </label>
+                          <textarea
+                            id={`reason-${venue.id}`}
+                            name="reason"
+                            required
+                            minLength={10}
+                            maxLength={500}
+                            placeholder="Contoh: Foto lapangan belum jelas memperlihatkan kondisi rumput dan jaring. Silakan unggah foto resolusi tinggi."
+                            className="min-h-24 w-full resize-y rounded-xl border border-border-strong bg-surface p-3 text-xs text-ink placeholder:text-ink-muted focus:border-error focus:outline-none focus:ring-2 focus:ring-error/20"
+                          />
+                        </div>
                       </DashboardForm>
                     </details>
                   </aside>
