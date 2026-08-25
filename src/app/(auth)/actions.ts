@@ -23,8 +23,6 @@ export type AuthActionState = {
   fieldErrors?: Record<string, string[] | undefined>
 }
 
-export const initialAuthState: AuthActionState = { status: "idle" }
-
 function invalidState(error: z.ZodError): AuthActionState {
   return {
     status: "error",

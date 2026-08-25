@@ -10,6 +10,7 @@ export interface AdminVenueReviewItem {
   facilities: string[]
   id: string
   imageCount: number
+  imageUrls: string[]
   name: string
   openingTime: string
   closingTime: string
@@ -20,9 +21,23 @@ export interface AdminVenueReviewItem {
   submittedAt: string
 }
 
+export interface AdminActiveVenueItem {
+  activeCourts: number
+  city: string
+  closingTime: string
+  id: string
+  name: string
+  openingTime: string
+  ownerName: string
+  phone: string | null
+  status: VenueStatus
+}
+
 export interface AdminOverview {
   approvedVenueCount: number
+  approvedVenuesList: AdminActiveVenueItem[]
   bookingCount: number
+  cityDistribution: Array<{ city: string; count: number }>
   pendingVenues: AdminVenueReviewItem[]
   settledRevenueRupiah: number
   suspendedVenueCount: number
@@ -87,14 +102,14 @@ export async function getAdminOverview(): Promise<AdminOverview> {
   const pending = venues
     .filter((venue) => venue.status === "PENDING" && venue.submitted_at)
     .sort((left, right) => left.submitted_at!.localeCompare(right.submitted_at!))
-  const ownerIds = [...new Set(pending.map((venue) => venue.owner_id))]
-  const venueIds = pending.map((venue) => venue.id)
+  const allOwnerIds = [...new Set(venues.map((venue) => venue.owner_id))]
+  const allVenueIds = venues.map((venue) => venue.id)
   const [ownersResult, courtsResult] = await Promise.all([
-    ownerIds.length
-      ? supabase.from("profiles").select("id, full_name, email").in("id", ownerIds)
+    allOwnerIds.length
+      ? supabase.from("profiles").select("id, full_name, email").in("id", allOwnerIds)
       : Promise.resolve({ data: [], error: null }),
-    venueIds.length
-      ? supabase.from("courts").select("venue_id").in("venue_id", venueIds).eq("is_active", true)
+    allVenueIds.length
+      ? supabase.from("courts").select("venue_id").in("venue_id", allVenueIds).eq("is_active", true)
       : Promise.resolve({ data: [], error: null }),
   ])
 
@@ -105,9 +120,36 @@ export async function getAdminOverview(): Promise<AdminOverview> {
     courtCounts.set(court.venue_id, (courtCounts.get(court.venue_id) ?? 0) + 1)
   }
 
+  const cityCounts = new Map<string, number>()
+  for (const v of venues) {
+    cityCounts.set(v.city, (cityCounts.get(v.city) ?? 0) + 1)
+  }
+  const cityDistribution = Array.from(cityCounts.entries())
+    .map(([city, count]) => ({ city, count }))
+    .sort((a, b) => b.count - a.count)
+
+  const approvedVenuesList = venues
+    .filter((venue) => venue.status === "APPROVED")
+    .map((venue) => {
+      const owner = owners.get(venue.owner_id)
+      return {
+        activeCourts: courtCounts.get(venue.id) ?? 0,
+        city: venue.city,
+        closingTime: venue.closing_time.slice(0, 5),
+        id: venue.id,
+        name: venue.name,
+        openingTime: venue.opening_time.slice(0, 5),
+        ownerName: owner?.full_name ?? "Pemilik",
+        phone: venue.phone,
+        status: venue.status,
+      }
+    })
+
   return {
     approvedVenueCount: venues.filter((venue) => venue.status === "APPROVED").length,
+    approvedVenuesList,
     bookingCount: bookingsResult.count ?? 0,
+    cityDistribution,
     pendingVenues: pending.map((venue) => {
       const owner = owners.get(venue.owner_id)
       return {
@@ -118,6 +160,7 @@ export async function getAdminOverview(): Promise<AdminOverview> {
         facilities: venue.facilities,
         id: venue.id,
         imageCount: venue.image_urls.length,
+        imageUrls: venue.image_urls,
         name: venue.name,
         openingTime: venue.opening_time.slice(0, 5),
         ownerEmail: owner?.email ?? "Email tidak tersedia",

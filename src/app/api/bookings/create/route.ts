@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     const { authId } = await requireApiUser()
     const body = createBookingSchema.parse(await parseJson(request))
     const admin = createApiAdminSupabase()
-    const { data, error } = await admin.rpc("create_booking", {
+    const { data, error } = await admin.rpc("create_pay_at_venue_booking", {
       p_user_id: authId,
       p_slot_ids: body.slotIds,
       p_idempotency_key: body.idempotencyKey,
@@ -35,6 +35,8 @@ export async function POST(request: Request) {
         booking: {
           id: booking.booking_id,
           code: booking.booking_code,
+          paymentMethod: booking.payment_mode,
+          status: booking.booking_status,
           totalPriceRupiah: booking.total_price_rupiah,
           paymentExpiresAt: booking.payment_expires_at,
         },

@@ -16,14 +16,14 @@ export async function POST(
     const { authId, supabase } = await requireApiUser()
     const { data: booking, error: bookingError } = await supabase
       .from("bookings")
-      .select("id, status")
+      .select("id, status, payment_mode")
       .eq("id", bookingId)
       .eq("user_id", authId)
       .maybeSingle()
 
     if (bookingError) throwDatabaseError(bookingError, "Booking")
     if (!booking) throw new ApiError(404, "NOT_FOUND", "Booking tidak ditemukan.")
-    if (booking.status === "CONFIRMED") {
+    if (booking.status === "CONFIRMED" && booking.payment_mode !== "PAY_AT_VENUE") {
       throw new ApiError(409, "REFUND_REQUIRED", "Booking yang sudah dibayar harus diproses melalui refund admin.")
     }
 

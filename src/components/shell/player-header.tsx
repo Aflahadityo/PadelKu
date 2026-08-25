@@ -206,7 +206,7 @@ export function PlayerHeader({ className, navItems, user }: PlayerHeaderProps) {
             <nav className="grid gap-1">
               {[
                 { href: "/", label: "Cari Venue Padel", icon: Search },
-                { href: "/#court-grid-demo", label: "Diagram Jadwal Lapangan", icon: Grid },
+                { href: "/#venue-list", label: "Jadwal Venue", icon: Grid },
                 { href: "/#community-matches", label: "Open Match (Komunitas)", icon: Sparkles, isHot: true },
                 { href: "/bookings", label: "Booking Saya", icon: Calendar },
                 { href: "/membership", label: "Membership VIP", icon: Crown },

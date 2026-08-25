@@ -26,7 +26,4 @@ ENCODED_PASSWORD=$(node -e 'process.stdout.write(encodeURIComponent(process.argv
 DB_URL="postgresql://postgres:${ENCODED_PASSWORD}@127.0.0.1:${POSTGRES_DIRECT_PORT}/postgres"
 
 cd "$ROOT"
-if [ -f supabase/seed.sql ]; then
-  exec npx supabase db push --db-url "$DB_URL" --include-seed --yes
-fi
 exec npx supabase db push --db-url "$DB_URL" --yes

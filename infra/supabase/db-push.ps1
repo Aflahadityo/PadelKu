@@ -29,15 +29,12 @@ $port = if ($values.ContainsKey("POSTGRES_DIRECT_PORT")) { $values["POSTGRES_DIR
 $encodedPassword = [System.Uri]::EscapeDataString($values["POSTGRES_PASSWORD"])
 $dbUrl = "postgresql://postgres:$encodedPassword@127.0.0.1:$port/postgres"
 $arguments = @("supabase", "db", "push", "--db-url", $dbUrl, "--yes")
-if (Test-Path -LiteralPath (Join-Path $root "supabase\seed.sql")) {
-  $arguments += "--include-seed"
-}
 
 Push-Location $root
 try {
   & npx.cmd @arguments
   if ($LASTEXITCODE -ne 0) {
-    throw "Supabase CLI migration or seed failed."
+    throw "Supabase CLI migration failed."
   }
 } finally {
   Pop-Location

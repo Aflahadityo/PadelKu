@@ -187,6 +187,7 @@ export type Database = {
           id: string
           idempotency_key: string | null
           initial_payment_expires_at: string
+          payment_mode: Database["public"]["Enums"]["booking_payment_mode"]
           payment_expires_at: string | null
           status: Database["public"]["Enums"]["booking_status"]
           total_price_rupiah: number
@@ -203,7 +204,8 @@ export type Database = {
           created_at?: string
           id?: string
           idempotency_key?: string | null
-          initial_payment_expires_at?: string
+          initial_payment_expires_at?: string | null
+          payment_mode?: Database["public"]["Enums"]["booking_payment_mode"]
           payment_expires_at?: string | null
           status?: Database["public"]["Enums"]["booking_status"]
           total_price_rupiah: number
@@ -220,7 +222,8 @@ export type Database = {
           created_at?: string
           id?: string
           idempotency_key?: string | null
-          initial_payment_expires_at?: string
+          initial_payment_expires_at?: string | null
+          payment_mode?: Database["public"]["Enums"]["booking_payment_mode"]
           payment_expires_at?: string | null
           status?: Database["public"]["Enums"]["booking_status"]
           total_price_rupiah?: number
@@ -768,6 +771,21 @@ export type Database = {
           total_price_rupiah: number
         }[]
       }
+      create_pay_at_venue_booking: {
+        Args: {
+          p_idempotency_key: string
+          p_slot_ids: string[]
+          p_user_id: string
+        }
+        Returns: {
+          booking_code: string
+          booking_id: string
+          booking_status: Database["public"]["Enums"]["booking_status"]
+          payment_expires_at: string | null
+          payment_mode: Database["public"]["Enums"]["booking_payment_mode"]
+          total_price_rupiah: number
+        }[]
+      }
       create_sandbox_payment: {
         Args: {
           p_booking_id: string
@@ -837,6 +855,7 @@ export type Database = {
       }
     }
     Enums: {
+      booking_payment_mode: "ONLINE" | "PAY_AT_VENUE"
       booking_slot_status: "AVAILABLE" | "LOCKED" | "BOOKED" | "BLOCKED"
       booking_status:
         | "PENDING_PAYMENT"
@@ -974,6 +993,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      booking_payment_mode: ["ONLINE", "PAY_AT_VENUE"],
       booking_slot_status: ["AVAILABLE", "LOCKED", "BOOKED", "BLOCKED"],
       booking_status: [
         "PENDING_PAYMENT",
@@ -988,4 +1008,3 @@ export const Constants = {
     },
   },
 } as const
-

@@ -132,9 +132,13 @@ export function PlayerFooter() {
         {/* Copyright & Disclaimer */}
         <div className="border-t border-border/80 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-[0.6875rem] text-ink-muted">
           <p>© {new Date().getFullYear()} PadelKu Indonesia. Hak cipta dilindungi undang-undang.</p>
-          <p className="flex items-center gap-1">
-            Dibuat dengan <Heart className="size-3 fill-urgent text-urgent" /> untuk kemajuan padel nasional.
-          </p>
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+            <Link href="/terms" className="hover:text-brand hover:underline">Ketentuan</Link>
+            <Link href="/privacy" className="hover:text-brand hover:underline">Privasi</Link>
+            <p className="flex items-center gap-1">
+              Dibuat dengan <Heart className="size-3 fill-urgent text-urgent" /> untuk kemajuan padel nasional.
+            </p>
+          </div>
         </div>
       </div>
     </footer>

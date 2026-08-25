@@ -23,6 +23,14 @@ export default async function LoginPage({
     : params.message
       ? messages[params.message]
       : undefined
+  const demoAccounts =
+    process.env.NODE_ENV !== "production" &&
+    process.env.NEXT_PUBLIC_ENABLE_DEMO_LOGIN === "true"
+      ? [
+          { label: "Player", email: "player@padelku.id", password: "PadelKuDev123!" },
+          { label: "Venue", email: "owner@padelku.id", password: "PadelKuDev123!" },
+        ]
+      : undefined
 
   return (
     <div className="w-full">
@@ -36,7 +44,7 @@ export default async function LoginPage({
         next={params.next ? safeRedirectPath(params.next, "/") : undefined}
         initialMessage={initialMessage}
         initialStatus={params.error ? "error" : "success"}
-        showDemo={process.env.NODE_ENV === "development"}
+        demoAccounts={demoAccounts}
       />
       <p className="mt-7 text-center text-sm text-ink-muted">
         Belum punya akun? <Link href="/register" className="font-semibold text-brand hover:underline">Daftar sekarang</Link>

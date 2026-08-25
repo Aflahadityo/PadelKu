@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
   forgotPasswordAction,
-  initialAuthState,
   loginAction,
   registerAction,
   resetPasswordAction,
@@ -16,6 +15,7 @@ import {
 } from "./actions"
 
 type FormKind = "login" | "register" | "forgot" | "reset"
+type DemoAccount = { email: string; label: string; password: string }
 
 const actions: Record<
   FormKind,
@@ -50,16 +50,16 @@ export function AuthForm({
   next,
   initialMessage,
   initialStatus = "success",
-  showDemo = false,
+  demoAccounts,
 }: {
   kind: FormKind
   next?: string
   initialMessage?: string
   initialStatus?: "error" | "success"
-  showDemo?: boolean
+  demoAccounts?: DemoAccount[]
 }) {
   const [state, formAction, pending] = useActionState(actions[kind], {
-    ...initialAuthState,
+    status: "idle" as const,
     ...(initialMessage ? { status: initialStatus, message: initialMessage } : {}),
   })
   const formRef = useRef<HTMLFormElement>(null)
@@ -76,10 +76,10 @@ export function AuthForm({
     reset: "Simpan kata sandi",
   }[kind]
 
-  function loginAsDemo(email: string) {
+  function loginAsDemo(account: DemoAccount) {
     if (!formRef.current || !emailRef.current || !passwordRef.current) return
-    emailRef.current.value = email
-    passwordRef.current.value = "PadelKuDev123!"
+    emailRef.current.value = account.email
+    passwordRef.current.value = account.password
     formRef.current.requestSubmit()
   }
 
@@ -226,17 +226,13 @@ export function AuthForm({
         </Button>
       </form>
 
-      {showDemo && isLogin ? (
+      {demoAccounts?.length && isLogin ? (
         <aside className="mt-6 border-t border-border pt-5">
           <p className="mb-3 text-sm font-semibold text-ink">Masuk cepat akun demo</p>
-          <div className="grid grid-cols-3 gap-2">
-            {[
-              ["Player", "player@padelku.id"],
-              ["Venue", "owner@padelku.id"],
-              ["Admin", "admin@padelku.id"],
-            ].map(([label, email]) => (
-              <Button key={email} type="button" variant="secondary" size="sm" disabled={pending} onClick={() => loginAsDemo(email)}>
-                {label}
+          <div className="grid grid-cols-2 gap-2">
+            {demoAccounts.map((account) => (
+              <Button key={account.email} type="button" variant="secondary" size="sm" disabled={pending} onClick={() => loginAsDemo(account)}>
+                {account.label}
               </Button>
             ))}
           </div>

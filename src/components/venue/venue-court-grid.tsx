@@ -3,31 +3,20 @@
 import { useEffect, useRef, useState } from "react"
 import { addDays, format, isSameDay, isToday, subDays } from "date-fns"
 import { id } from "date-fns/locale/id"
-import { Calendar, ChevronLeft, ChevronRight } from "lucide-react"
-import { BookingSuccess } from "@/components/booking/booking-success"
+import { Calendar, Check, ChevronLeft, ChevronRight } from "lucide-react"
+import Link from "next/link"
 import { BookingSummary } from "@/components/booking/booking-summary"
 import { CourtGrid, type CourtGridSlot } from "@/components/booking/court-grid"
-import { PaymentModal } from "@/components/booking/payment-modal"
 import type { VenueAvailability } from "@/lib/data/marketplace"
-import { cn } from "@/lib/utils"
+import { cn, formatCurrency } from "@/lib/utils"
 
 interface CreatedBooking {
   code: string
   id: string
-  paymentExpiresAt: string
+  paymentExpiresAt: string | null
+  paymentMethod: "PAY_AT_VENUE"
+  status: "CONFIRMED"
   totalPriceRupiah: number
-}
-
-type PaymentMethod = "VA" | "EWALLET" | "QRIS"
-
-interface CreatedPayment {
-  action: { kind: "VIRTUAL_ACCOUNT" | "QR_PAYLOAD" | "EWALLET_TOKEN"; value: string | null }
-  expiresAt: string
-  id: string
-  method: PaymentMethod
-  simulatorEnabled: boolean
-  status: string
-  virtualAccount: string | null
 }
 
 async function jsonRequest<T>(url: string, init?: RequestInit): Promise<T> {
@@ -42,14 +31,9 @@ export function VenueCourtGrid({ venueId, venueName }: { venueId: string; venueN
   const [availability, setAvailability] = useState<VenueAvailability | null>(null)
   const [selectedSlot, setSelectedSlot] = useState<CourtGridSlot | null>(null)
   const [booking, setBooking] = useState<CreatedBooking | null>(null)
-  const [payment, setPayment] = useState<CreatedPayment | null>(null)
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("VA")
-  const [paymentOpen, setPaymentOpen] = useState(false)
-  const [paymentStatus, setPaymentStatus] = useState<"pending" | "success" | "expired" | "error">("pending")
   const [error, setError] = useState<string | null>(null)
   const [processing, setProcessing] = useState(false)
   const bookingKey = useRef(crypto.randomUUID())
-  const paymentKey = useRef(crypto.randomUUID())
   const date = format(selectedDate, "yyyy-MM-dd")
 
   // Generate 7 days quick chips
@@ -74,9 +58,7 @@ export function VenueCourtGrid({ venueId, venueName }: { venueId: string; venueN
     setSelectedSlot(null)
     setError(null)
     setBooking(null)
-    setPayment(null)
     bookingKey.current = crypto.randomUUID()
-    paymentKey.current = crypto.randomUUID()
     setSelectedDate(next)
   }
 
@@ -113,24 +95,12 @@ export function VenueCourtGrid({ venueId, venueName }: { venueId: string; venueN
     setProcessing(true)
     setError(null)
     try {
-      let currentBooking = booking
-      if (!currentBooking) {
-        const bookingResult = await jsonRequest<{ booking: CreatedBooking }>("/api/bookings/create", {
-          body: JSON.stringify({ idempotencyKey: bookingKey.current, slotIds: [selectedSlot.id] }),
-          headers: { "Content-Type": "application/json" },
-          method: "POST",
-        })
-        currentBooking = bookingResult.booking
-        setBooking(currentBooking)
-      }
-      const paymentResult = await jsonRequest<{ payment: CreatedPayment }>("/api/payments/create", {
-        body: JSON.stringify({ bookingId: currentBooking.id, method: paymentMethod }),
-        headers: { "Content-Type": "application/json", "Idempotency-Key": paymentKey.current },
+      const bookingResult = await jsonRequest<{ booking: CreatedBooking }>("/api/bookings/create", {
+        body: JSON.stringify({ idempotencyKey: bookingKey.current, slotIds: [selectedSlot.id] }),
+        headers: { "Content-Type": "application/json" },
         method: "POST",
       })
-      setPayment(paymentResult.payment)
-      setPaymentStatus("pending")
-      setPaymentOpen(true)
+      setBooking(bookingResult.booking)
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Booking gagal dibuat.")
     } finally {
@@ -138,60 +108,56 @@ export function VenueCourtGrid({ venueId, venueName }: { venueId: string; venueN
     }
   }
 
-  async function simulate(command: "SETTLE" | "FAIL") {
-    if (!payment || !booking) return
-    try {
-      await jsonRequest("/api/payments/mock/settle", {
-        body: JSON.stringify({ command, paymentId: payment.id }),
-        headers: { "Content-Type": "application/json", "Idempotency-Key": crypto.randomUUID() },
-        method: "POST",
-      })
-      await checkStatus()
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Status gagal diperbarui.")
-      setPaymentStatus("error")
-    }
-  }
-
-  async function checkStatus() {
-    if (!payment || !booking) return
-    try {
-      const state = await jsonRequest<{
-        booking: { status: string }
-        payments: Array<{ id: string; status: string }>
-      }>(`/api/payments/${booking.id}/status`)
-      const currentPayment = state.payments.find((item) => item.id === payment.id)
-      if (state.booking.status === "CONFIRMED" || state.booking.status === "COMPLETED") {
-        setPaymentStatus("success")
-      } else if (state.booking.status === "CANCELLED" || new Date(payment.expiresAt) <= new Date()) {
-        setPaymentStatus("expired")
-      } else if (currentPayment?.status === "FAILED") {
-        setPaymentStatus("error")
-      } else {
-        setPaymentStatus("pending")
-      }
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Status gagal dimuat.")
-    }
-  }
-
-  if (paymentStatus === "success" && booking && selectedSlot && selectedCourt) {
-    const methodLabels = {
-      EWALLET: "E-wallet Sandbox",
-      QRIS: "QRIS Sandbox",
-      VA: "Virtual Account Sandbox",
-    }
+  if (booking && selectedSlot && selectedCourt) {
     return (
-      <BookingSuccess
-        venueName={venueName}
-        courtName={selectedCourt.name}
-        date={date}
-        startTime={selectedSlot.startTime}
-        endTime={selectedSlot.endTime}
-        totalPrice={booking.totalPriceRupiah}
-        orderId={booking.code}
-        paymentMethod={methodLabels[payment?.method ?? paymentMethod]}
-      />
+      <div className="flex flex-col items-center justify-center space-y-6 px-4 py-12 text-center">
+        <div className="grid size-20 place-items-center rounded-full bg-success" aria-hidden="true">
+          <Check className="size-10 text-white" />
+        </div>
+        <div>
+          <h1 className="text-h1 font-display text-ink mb-2">Booking Berhasil!</h1>
+          <p className="text-body text-ink-muted">
+            {selectedCourt.name} di {venueName} sudah dikonfirmasi.
+          </p>
+        </div>
+        <div className="bg-surface rounded-card shadow-card w-full max-w-sm space-y-3 p-5 text-left">
+          <div className="flex justify-between gap-4">
+            <span className="text-ink-muted">ID Booking</span>
+            <span className="font-mono text-sm text-ink">{booking.code}</span>
+          </div>
+          <div className="flex justify-between gap-4">
+            <span className="text-ink-muted">Tanggal</span>
+            <span className="font-medium text-ink">{date}</span>
+          </div>
+          <div className="flex justify-between gap-4">
+            <span className="text-ink-muted">Jam</span>
+            <span className="font-mono font-medium text-ink">
+              {selectedSlot.startTime} - {selectedSlot.endTime}
+            </span>
+          </div>
+          <div className="flex justify-between gap-4">
+            <span className="text-ink-muted">Metode</span>
+            <span className="font-medium text-ink">Bayar di venue</span>
+          </div>
+          <div className="border-border flex justify-between gap-4 border-t pt-3">
+            <span className="font-semibold text-ink">Bayar di venue</span>
+            <span className="font-mono text-h2 font-bold text-ink">
+              {formatCurrency(booking.totalPriceRupiah)}
+            </span>
+          </div>
+        </div>
+        <p className="max-w-sm text-xs text-ink-muted">
+          Tunjukkan ID booking kepada petugas dan lakukan pembayaran langsung di venue.
+        </p>
+        <div className="flex w-full max-w-sm flex-col gap-3">
+          <Link href="/bookings" className="btn-cta w-full px-5 py-3 text-sm font-bold">
+            Lihat Booking Saya
+          </Link>
+          <Link href="/" className="rounded-xl border border-border px-5 py-3 text-sm font-bold text-ink">
+            Cari Venue Lain
+          </Link>
+        </div>
+      </div>
     )
   }
 
@@ -283,49 +249,26 @@ export function VenueCourtGrid({ venueId, venueName }: { venueId: string; venueN
       )}
 
       {/* Selected Slot Confirmation & Checkout */}
-      {selectedSlot && selectedCourt && !payment && (
+      {selectedSlot && selectedCourt && (
         <div className="grid gap-6 lg:grid-cols-12 items-start pt-4 animate-in fade-in-50 duration-200">
-          {/* Payment Method Selector (5 Cols) */}
           <div className="lg:col-span-5 rounded-2xl border border-border/90 bg-surface p-5 shadow-card space-y-4">
             <div>
               <h3 className="font-display text-base font-bold text-ink">Metode Pembayaran</h3>
-              <p className="text-xs text-ink-muted">Pilih jalur pembayaran otomatis yang Anda inginkan.</p>
+              <p className="text-xs text-ink-muted">Pembayaran dilakukan langsung saat tiba di venue.</p>
             </div>
-
-            <div className="space-y-2">
-              {[
-                { id: "VA", label: "Virtual Account BCA / Mandiri", desc: "Verifikasi otomatis 24 jam" },
-                { id: "QRIS", label: "QRIS Instant (Gopay/OVO/ShopeePay)", desc: "Scan barcode langsung bayar" },
-                { id: "EWALLET", label: "E-Wallet Sandbox", desc: "Debit instan saldo dompet" },
-              ].map((m) => (
-                <label
-                  key={m.id}
-                  className={cn(
-                    "flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all",
-                    paymentMethod === m.id
-                      ? "border-brand bg-brand/5 ring-1 ring-brand"
-                      : "border-border hover:bg-surface-muted",
-                  )}
-                >
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="radio"
-                      name="paymentMethod"
-                      value={m.id}
-                      checked={paymentMethod === m.id}
-                      onChange={(e) => {
-                        setPaymentMethod(e.target.value as PaymentMethod)
-                        paymentKey.current = crypto.randomUUID()
-                      }}
-                      className="size-4 text-brand focus:ring-brand"
-                    />
-                    <div>
-                      <span className="block text-xs font-bold text-ink">{m.label}</span>
-                      <span className="text-[0.6875rem] text-ink-muted">{m.desc}</span>
-                    </div>
-                  </div>
-                </label>
-              ))}
+            <div className="flex items-center gap-3 rounded-xl border border-brand bg-brand/5 p-3 ring-1 ring-brand">
+              <input
+                type="radio"
+                name="paymentMethod"
+                value="PAY_AT_VENUE"
+                checked
+                readOnly
+                className="size-4 text-brand focus:ring-brand"
+              />
+              <div>
+                <span className="block text-xs font-bold text-ink">Bayar di venue</span>
+                <span className="text-[0.6875rem] text-ink-muted">Tanpa pembayaran online</span>
+              </div>
             </div>
           </div>
 
@@ -340,62 +283,11 @@ export function VenueCourtGrid({ venueId, venueName }: { venueId: string; venueN
               price={selectedSlot.price}
               onConfirm={createBooking}
               isProcessing={processing}
-              submitLabel={booking ? "Lanjutkan ke pembayaran" : "Konfirmasi & Kunci Slot 10 Menit"}
+              submitLabel="Konfirmasi Booking"
             />
           </div>
         </div>
       )}
-
-      {/* Resume Pending Payment button if user closed modal */}
-      {payment && booking && !paymentOpen && paymentStatus === "pending" && (
-        <div className="rounded-2xl border-2 border-brand bg-brand/5 p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div>
-            <p className="font-display text-sm font-bold text-ink">Pembayaran Anda Masih Aktif</p>
-            <p className="text-xs text-ink-muted">Kode Booking: <span className="font-mono font-bold text-ink">{booking.code}</span></p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setPaymentOpen(true)}
-            className="btn-cta text-xs font-bold px-5 py-2.5 shadow-xs"
-          >
-            Buka Instruksi Pembayaran
-          </button>
-        </div>
-      )}
-
-      {/* Payment Modal */}
-      <PaymentModal
-        isOpen={Boolean(payment && booking) && paymentOpen && paymentStatus !== "success"}
-        onClose={() => {
-          setPaymentOpen(false)
-          if (paymentStatus === "error") {
-            setPayment(null)
-            paymentKey.current = crypto.randomUUID()
-          }
-        }}
-        orderId={booking?.code ?? ""}
-        totalPrice={booking?.totalPriceRupiah ?? 0}
-        vaNumber={payment?.virtualAccount ?? undefined}
-        instructionLabel={
-          payment?.action.kind === "QR_PAYLOAD"
-            ? "Payload QRIS sandbox"
-            : payment?.action.kind === "EWALLET_TOKEN"
-            ? "Token e-wallet sandbox"
-            : undefined
-        }
-        instructionValue={payment?.action.kind === "VIRTUAL_ACCOUNT" ? null : payment?.action.value}
-        bankName="Sandbox Bank"
-        expiryTime={
-          payment
-            ? new Intl.DateTimeFormat("id-ID", { dateStyle: "medium", timeStyle: "short" }).format(
-                new Date(payment.expiresAt),
-              )
-            : undefined
-        }
-        status={paymentStatus}
-        onCheckStatus={checkStatus}
-        onSimulate={payment?.simulatorEnabled ? simulate : undefined}
-      />
     </div>
   )
 }

@@ -1,11 +1,10 @@
 import Link from "next/link"
 import {
+  ArrowRight,
   CalendarDays,
   Clock,
   ExternalLink,
   MapPin,
-  QrCode,
-  Share2,
   Ticket,
 } from "lucide-react"
 import { MobileTabBar } from "@/components/shell/mobile-tab-bar"
@@ -27,9 +26,9 @@ export default async function BookingsPage() {
 
       <main className="safe-area-x mx-auto max-w-5xl space-y-8 py-8">
         <PageHeader
-          eyebrow="E-Tiket & Reservasi"
-          title="Tiket & Booking Saya"
-          description="Akses e-tiket digital untuk scan check-in di resepsionis venue dan pantau riwayat bermain."
+          eyebrow="Reservasi Pemain"
+          title="Booking Saya"
+          description="Pantau status pembayaran, jadwal bermain, dan riwayat booking Anda."
         />
 
         {!bookings.length ? (
@@ -107,7 +106,7 @@ export default async function BookingsPage() {
                       )}
                     </div>
 
-                    {/* Price & QR Simulation */}
+                    {/* Price */}
                     <div className="flex sm:flex-col items-center sm:items-end justify-between gap-4 border-t sm:border-t-0 sm:border-l border-border/80 pt-4 sm:pt-0 sm:pl-6">
                       <div className="text-left sm:text-right">
                         <span className="text-[0.6875rem] font-bold uppercase tracking-wider text-ink-muted">
@@ -116,12 +115,6 @@ export default async function BookingsPage() {
                         <p className="font-mono text-xl font-black text-ink">
                           {formatCurrency(booking.totalPriceRupiah)}
                         </p>
-                      </div>
-
-                      {/* QR Check-in preview */}
-                      <div className="flex items-center gap-2 rounded-xl border border-brand/30 bg-brand/5 px-3 py-1.5 text-[0.6875rem] font-bold text-brand">
-                        <QrCode className="size-4" />
-                        <span>Scan saat Tiba</span>
                       </div>
                     </div>
                   </div>
@@ -136,16 +129,13 @@ export default async function BookingsPage() {
                       <ExternalLink className="size-3" />
                     </Link>
 
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => alert(`Link jadwal bermain telah disalin untuk kode ${booking.bookingCode}`)}
-                        className="btn-secondary h-8 px-3 text-[0.6875rem] font-semibold"
-                      >
-                        <Share2 className="size-3" />
-                        <span>Bagikan ke Teman</span>
-                      </button>
-                    </div>
+                    <Link
+                      href={`/bookings/${booking.id}`}
+                      className="btn-secondary inline-flex min-h-9 items-center gap-1.5 px-3 text-[0.6875rem] font-bold"
+                    >
+                      <span>Lihat Detail</span>
+                      <ArrowRight className="size-3" />
+                    </Link>
                   </div>
                 </article>
               )

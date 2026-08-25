@@ -1,4 +1,3 @@
-import { randomUUID } from "node:crypto"
 import Link from "next/link"
 import {
   ArrowLeft,
@@ -9,9 +8,8 @@ import {
   WalletCards,
   X,
 } from "lucide-react"
+import { AdminTransactionsWorkbench } from "@/components/dashboard/admin-transactions-workbench"
 import { Panel } from "@/components/dashboard/panel"
-import { DashboardForm } from "@/components/dashboard/dashboard-form"
-import { StatusBadge } from "@/components/dashboard/status-badge"
 import { Button } from "@/components/ui/button"
 import { EmptyState } from "@/components/ui/empty-state"
 import { PageHeader } from "@/components/ui/page-header"
@@ -22,7 +20,6 @@ import {
 } from "@/lib/dashboard/admin-data"
 import { formatCurrency } from "@/lib/utils"
 import type { BookingStatus, PaymentStatus } from "@/types/database"
-import { transitionPaymentAction } from "@/lib/dashboard/payment-actions"
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>
 
@@ -76,6 +73,12 @@ export default async function AdminTransactionsPage({
 
   const hasFilters = Boolean(query || status || paymentStatus)
 
+  // Calculate quick metrics from current page
+  const totalAmount = transactions.items.reduce((acc, i) => acc + i.amountRupiah, 0)
+  const settledCount = transactions.items.filter((i) => i.paymentStatus === "SETTLED").length
+  const pendingCount = transactions.items.filter((i) => i.paymentStatus === "PENDING").length
+  const disputeCount = transactions.items.filter((i) => Boolean(i.disputeStatus)).length
+
   return (
     <main className="space-y-8">
       {/* Page Header */}
@@ -87,17 +90,52 @@ export default async function AdminTransactionsPage({
           <Button asChild variant="secondary" className="text-xs font-bold shadow-2xs">
             <Link href="/admin">
               <ArrowLeft className="size-4" aria-hidden="true" />
-              <span>Kembali ke Ringkasan</span>
+              <span>Kembali ke Pusat Kendali</span>
             </Link>
           </Button>
         }
       />
 
+      {/* Transaction Top Summary Metrics HUD */}
+      <section className="grid gap-4 sm:grid-cols-4">
+        <div className="rounded-2xl border border-border bg-surface p-5 shadow-xs space-y-1">
+          <span className="text-xs font-bold text-ink-muted">Total Nilai Halaman Ini</span>
+          <p className="font-mono text-xl sm:text-2xl font-black text-ink">
+            {formatCurrency(totalAmount)}
+          </p>
+          <p className="text-[0.6875rem] text-ink-muted">{transactions.items.length} transaksi di halaman ini</p>
+        </div>
+
+        <div className="rounded-2xl border border-border bg-surface p-5 shadow-xs space-y-1">
+          <span className="text-xs font-bold text-ink-muted">Transaksi Lunas</span>
+          <p className="font-mono text-xl sm:text-2xl font-black text-success">
+            {settledCount} Lunas
+          </p>
+          <p className="text-[0.6875rem] text-ink-muted">Pembayaran berhasil terverifikasi</p>
+        </div>
+
+        <div className="rounded-2xl border border-border bg-surface p-5 shadow-xs space-y-1">
+          <span className="text-xs font-bold text-ink-muted">Menunggu Bayar</span>
+          <p className="font-mono text-xl sm:text-2xl font-black text-warning">
+            {pendingCount} Pending
+          </p>
+          <p className="text-[0.6875rem] text-ink-muted">Dalam masa batas waktu pembayaran</p>
+        </div>
+
+        <div className="rounded-2xl border border-border bg-surface p-5 shadow-xs space-y-1">
+          <span className="text-xs font-bold text-ink-muted">Dispute & Sengketa</span>
+          <p className="font-mono text-xl sm:text-2xl font-black text-urgent">
+            {disputeCount} Kasus
+          </p>
+          <p className="text-[0.6875rem] text-ink-muted">Sengketa yang memerlukan resolusi</p>
+        </div>
+      </section>
+
       {/* Filter & Search Bar */}
       <form
         action="/admin/transactions"
         method="get"
-        className="rounded-2xl border border-border/90 bg-surface p-4 sm:p-5 shadow-xs space-y-3"
+        className="rounded-3xl border border-border/90 bg-surface p-5 shadow-xs space-y-3"
       >
         <div className="grid gap-3 lg:grid-cols-[minmax(16rem,1.5fr)_minmax(12rem,1fr)_minmax(12rem,1fr)_auto]">
           {/* Keyword Search */}
@@ -168,14 +206,14 @@ export default async function AdminTransactionsPage({
       </form>
 
       {/* Transactions Table Panel */}
-      <Panel className="overflow-hidden p-0 sm:p-0">
+      <Panel className="overflow-hidden p-0 sm:p-0 shadow-card">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/80 bg-surface-muted/30 p-5 sm:p-6">
           <div>
             <h2 className="font-display text-lg sm:text-xl font-bold text-ink">
-              Daftar Transaksi Terbaru
+              Rekonsiliasi Transaksi Gateway
             </h2>
             <p className="mt-0.5 text-xs text-ink-muted">
-              {transactions.total} total transaksi ditemukan di database
+              {transactions.total} total data transaksi ditemukan di database
             </p>
           </div>
 
@@ -192,193 +230,10 @@ export default async function AdminTransactionsPage({
             description="Coba ubah kata kunci pencarian atau sesuaikan filter status booking dan pembayaran."
           />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[64rem] text-left text-xs">
-              <thead className="bg-surface-muted text-[0.6875rem] font-bold uppercase tracking-wider text-ink-muted">
-                <tr>
-                  <th className="px-5 py-3.5">Kode Booking</th>
-                  <th className="px-5 py-3.5">Pemain</th>
-                  <th className="px-5 py-3.5">Venue</th>
-                  <th className="px-5 py-3.5">Status Booking</th>
-                  <th className="px-5 py-3.5">Status Bayar</th>
-                  <th className="px-5 py-3.5 text-right">Nilai & Sandbox Aksi</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/80">
-                {transactions.items.map((item) => (
-                  <tr
-                    key={item.bookingId}
-                    className="align-top hover:bg-surface-muted/30 transition-colors"
-                  >
-                    {/* Booking Code & Timestamp */}
-                    <td className="px-5 py-4">
-                      <p className="font-mono font-bold text-ink text-sm">
-                        {item.bookingCode}
-                      </p>
-                      <time
-                        className="mt-1 block font-mono text-[0.6875rem] text-ink-muted"
-                        dateTime={item.createdAt}
-                      >
-                        {new Intl.DateTimeFormat("id-ID", {
-                          dateStyle: "medium",
-                          timeStyle: "short",
-                        }).format(new Date(item.createdAt))}
-                      </time>
-                    </td>
-
-                    {/* Player info */}
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-2">
-                        <span className="grid size-7 place-items-center rounded-lg bg-brand/10 text-brand font-bold text-xs">
-                          {item.playerName.charAt(0).toUpperCase()}
-                        </span>
-                        <div>
-                          <p className="font-semibold text-ink">{item.playerName}</p>
-                          <p className="text-[0.6875rem] text-ink-muted">{item.playerEmail}</p>
-                        </div>
-                      </div>
-                    </td>
-
-                    {/* Venue Name */}
-                    <td className="px-5 py-4 font-semibold text-ink">
-                      {item.venueName}
-                    </td>
-
-                    {/* Booking Status */}
-                    <td className="px-5 py-4">
-                      <StatusBadge status={item.bookingStatus} />
-                    </td>
-
-                    {/* Payment Status & Provider */}
-                    <td className="px-5 py-4">
-                      {item.paymentStatus ? (
-                        <StatusBadge status={item.paymentStatus} />
-                      ) : (
-                        <span className="text-xs text-ink-muted">Belum dibuat</span>
-                      )}
-                      <p className="mt-1.5 font-mono text-[0.6875rem] text-ink-muted">
-                        {item.paymentMethod?.replaceAll("_", " ") ?? "-"} · {item.paymentProvider ?? "-"}
-                      </p>
-                    </td>
-
-                    {/* Amount & Sandbox Controls */}
-                    <td className="px-5 py-4 text-right">
-                      <p className="font-mono text-sm font-black tabular-nums text-ink">
-                        {formatCurrency(item.amountRupiah)}
-                      </p>
-
-                      {/* Sandbox Settlement Trigger */}
-                      {item.paymentId && item.paymentStatus === "PENDING" && (
-                        <DashboardForm
-                          action={transitionPaymentAction}
-                          className="mt-2"
-                          submitLabel="⚡ Settle Sandbox"
-                        >
-                          <input type="hidden" name="paymentId" value={item.paymentId} />
-                          <input type="hidden" name="command" value="SETTLE" />
-                          <input type="hidden" name="idempotencyKey" value={randomUUID()} />
-                        </DashboardForm>
-                      )}
-
-                      {/* Sandbox Refund & Dispute Dropdown */}
-                      {item.paymentId && item.paymentStatus === "SETTLED" && !item.disputeStatus && (
-                        <details className="mt-2 text-left">
-                          <summary className="cursor-pointer font-bold text-error text-[0.6875rem] hover:underline">
-                            + Refund / Dispute
-                          </summary>
-                          <div className="mt-2 space-y-2 rounded-xl border border-border bg-surface p-3 shadow-xs">
-                            <DashboardForm
-                              action={transitionPaymentAction}
-                              variant="destructive"
-                              submitLabel="Refund Sandbox"
-                            >
-                              <input type="hidden" name="paymentId" value={item.paymentId} />
-                              <input type="hidden" name="command" value="REFUND" />
-                              <input type="hidden" name="idempotencyKey" value={randomUUID()} />
-                              <textarea
-                                name="reason"
-                                required
-                                minLength={10}
-                                placeholder="Alasan refund dana..."
-                                className="min-h-16 w-full rounded-lg border border-border p-2 text-xs"
-                              />
-                            </DashboardForm>
-
-                            <DashboardForm
-                              action={transitionPaymentAction}
-                              submitLabel="Buka Dispute"
-                            >
-                              <input type="hidden" name="paymentId" value={item.paymentId} />
-                              <input type="hidden" name="command" value="OPEN_DISPUTE" />
-                              <input type="hidden" name="idempotencyKey" value={randomUUID()} />
-                              <textarea
-                                name="reason"
-                                required
-                                minLength={10}
-                                placeholder="Alasan dispute..."
-                                className="min-h-16 w-full rounded-lg border border-border p-2 text-xs"
-                              />
-                            </DashboardForm>
-                          </div>
-                        </details>
-                      )}
-
-                      {/* Sandbox Dispute Resolution */}
-                      {item.paymentId &&
-                        item.paymentStatus === "SETTLED" &&
-                        item.disputeStatus === "OPEN" && (
-                          <details className="mt-2 text-left">
-                            <summary className="cursor-pointer font-bold text-ink text-[0.6875rem] hover:underline">
-                              ⚖️ Resolusi Dispute
-                            </summary>
-                            <div className="mt-2 space-y-2 rounded-xl border border-border bg-surface p-3 shadow-xs">
-                              <DashboardForm
-                                action={transitionPaymentAction}
-                                submitLabel="Menangkan Venue"
-                              >
-                                <input type="hidden" name="paymentId" value={item.paymentId} />
-                                <input type="hidden" name="command" value="WIN_DISPUTE" />
-                                <input type="hidden" name="idempotencyKey" value={randomUUID()} />
-                                <textarea
-                                  name="reason"
-                                  required
-                                  minLength={10}
-                                  placeholder="Catatan resolusi..."
-                                  className="min-h-16 w-full rounded-lg border border-border p-2 text-xs"
-                                />
-                              </DashboardForm>
-
-                              <DashboardForm
-                                action={transitionPaymentAction}
-                                variant="destructive"
-                                submitLabel="Refund Pemain"
-                              >
-                                <input type="hidden" name="paymentId" value={item.paymentId} />
-                                <input type="hidden" name="command" value="LOSE_DISPUTE" />
-                                <input type="hidden" name="idempotencyKey" value={randomUUID()} />
-                                <textarea
-                                  name="reason"
-                                  required
-                                  minLength={10}
-                                  placeholder="Alasan refund..."
-                                  className="min-h-16 w-full rounded-lg border border-border p-2 text-xs"
-                                />
-                              </DashboardForm>
-                            </div>
-                          </details>
-                        )}
-
-                      {item.disputeStatus && item.disputeStatus !== "OPEN" && (
-                        <p className="mt-1.5 font-mono text-[0.6875rem] text-ink-muted">
-                          Dispute: {item.disputeStatus}
-                        </p>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <AdminTransactionsWorkbench
+            items={transactions.items}
+            total={transactions.total}
+          />
         )}
 
         {/* Pagination Navigation */}

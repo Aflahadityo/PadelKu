@@ -42,7 +42,15 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           {children}
         </div>
         <footer className="mx-auto w-full max-w-md border-t border-border py-5 text-xs leading-5 text-ink-muted">
-          Dengan melanjutkan, kamu menyetujui ketentuan penggunaan dan kebijakan privasi PadelKu.
+          Dengan melanjutkan, kamu menyetujui{" "}
+          <Link href="/terms" className="font-semibold text-ink hover:text-brand hover:underline">
+            ketentuan penggunaan
+          </Link>{" "}
+          dan{" "}
+          <Link href="/privacy" className="font-semibold text-ink hover:text-brand hover:underline">
+            kebijakan privasi
+          </Link>{" "}
+          PadelKu.
         </footer>
       </section>
     </div>

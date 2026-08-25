@@ -12,7 +12,7 @@ export interface PlayerNavItem {
 
 export const playerNavItems: PlayerNavItem[] = [
   { href: "/", label: "Cari Venue" },
-  { href: "/#court-grid-demo", label: "Diagram Jadwal" },
+  { href: "/#venue-list", label: "Jadwal Venue" },
   { href: "/#community-matches", label: "Open Match", isHot: true },
   { href: "/bookings", label: "Booking Saya" },
   { href: "/membership", label: "Membership" },
@@ -59,5 +59,4 @@ export function DesktopNav({ className, items = playerNavItems }: DesktopNavProp
     </nav>
   )
 }
-
 

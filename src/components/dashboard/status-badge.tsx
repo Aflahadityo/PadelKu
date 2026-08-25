@@ -13,7 +13,7 @@ const labels: Record<string, string> = {
   FAILED: "Gagal",
   LOCKED: "Dikunci",
   PENDING: "Menunggu",
-  PENDING_PAYMENT: "Menunggu bayar",
+  PENDING_PAYMENT: "Menunggu Bayar",
   REFUNDED: "Dikembalikan",
   REJECTED: "Ditolak",
   SETTLED: "Lunas",
@@ -30,5 +30,12 @@ function variantForStatus(status: string): BadgeProps["variant"] {
 }
 
 export function StatusBadge({ status }: { status: string }) {
-  return <Badge variant={variantForStatus(status)}>{labels[status] ?? status}</Badge>
+  const isLive = ["PENDING", "PENDING_PAYMENT", "LOCKED"].includes(status)
+  return (
+    <Badge variant={variantForStatus(status)} className="gap-1.5 font-medium">
+      {isLive && <span className="size-1.5 rounded-full bg-warning animate-pulse" />}
+      {status === "SETTLED" && <span className="size-1.5 rounded-full bg-success" />}
+      <span>{labels[status] ?? status}</span>
+    </Badge>
+  )
 }

@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { LogOut, Settings, UserRound } from "lucide-react"
+import { LogOut, UserRound } from "lucide-react"
 import { cn, getInitials } from "@/lib/utils"
 
 export interface ShellUser {
@@ -44,10 +44,6 @@ export function UserMenu({ align = "right", className, user }: UserMenuProps) {
           <Link href="/profile" className="flex min-h-11 items-center gap-3 rounded-control px-3 text-sm font-medium text-ink hover:bg-surface-muted">
             <UserRound aria-hidden="true" className="size-4 text-ink-muted" />
             Profil
-          </Link>
-          <Link href="/profile/settings" className="flex min-h-11 items-center gap-3 rounded-control px-3 text-sm font-medium text-ink hover:bg-surface-muted">
-            <Settings aria-hidden="true" className="size-4 text-ink-muted" />
-            Pengaturan
           </Link>
         </nav>
         <form action="/api/auth/logout" method="post" className="border-t border-border pt-1">
