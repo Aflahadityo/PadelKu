@@ -1,9 +1,10 @@
 import type { NextConfig } from "next"
 
+const standaloneBuild =
+  process.env.NEXT_BUILD_TARGET === "standalone" && !process.env.VERCEL
+
 const nextConfig: NextConfig = {
-  ...(process.env.NEXT_BUILD_TARGET === "standalone"
-    ? { output: "standalone" as const }
-    : {}),
+  ...(standaloneBuild ? { output: "standalone" as const } : {}),
   images: {
     remotePatterns: [
       {

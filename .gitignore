@@ -31,3 +31,6 @@ yarn-error.log*
 # Docker / self-hosted runtime
 .supabase/
 .env.docker
+
+.vercel
+.env*
