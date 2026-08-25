@@ -1,6 +1,6 @@
 "use client"
 
-import { useActionState } from "react"
+import { useActionState, useRef } from "react"
 import Link from "next/link"
 import { ArrowRight, Check, LoaderCircle, LockKeyhole, Mail } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -62,6 +62,9 @@ export function AuthForm({
     ...initialAuthState,
     ...(initialMessage ? { status: initialStatus, message: initialMessage } : {}),
   })
+  const formRef = useRef<HTMLFormElement>(null)
+  const emailRef = useRef<HTMLInputElement>(null)
+  const passwordRef = useRef<HTMLInputElement>(null)
 
   const isRegister = kind === "register"
   const isLogin = kind === "login"
@@ -73,9 +76,16 @@ export function AuthForm({
     reset: "Simpan kata sandi",
   }[kind]
 
+  function loginAsDemo(email: string) {
+    if (!formRef.current || !emailRef.current || !passwordRef.current) return
+    emailRef.current.value = email
+    passwordRef.current.value = "PadelKuDev123!"
+    formRef.current.requestSubmit()
+  }
+
   return (
     <div className="w-full">
-      <form action={formAction} className="space-y-5" noValidate>
+      <form ref={formRef} action={formAction} className="space-y-5" noValidate>
         {next ? <input type="hidden" name="next" value={next} /> : null}
 
         {isRegister ? (
@@ -119,6 +129,7 @@ export function AuthForm({
               <Mail aria-hidden="true" className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-ink-muted" />
               <Input
                 id="email"
+                ref={emailRef}
                 name="email"
                 type="email"
                 inputMode="email"
@@ -163,6 +174,7 @@ export function AuthForm({
               <LockKeyhole aria-hidden="true" className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-ink-muted" />
               <Input
                 id="password"
+                ref={passwordRef}
                 name="password"
                 type="password"
                 autoComplete={kind === "login" ? "current-password" : "new-password"}
@@ -215,10 +227,19 @@ export function AuthForm({
       </form>
 
       {showDemo && isLogin ? (
-        <aside className="mt-6 border-t border-border pt-5 text-sm leading-6 text-ink-muted">
-          <p className="font-semibold text-ink">Akun demo development</p>
-          <p><span className="font-mono text-xs">player@padelku.id</span> / <span className="font-mono text-xs">password123</span></p>
-          <p><span className="font-mono text-xs">owner@padelku.id</span> / <span className="font-mono text-xs">password123</span></p>
+        <aside className="mt-6 border-t border-border pt-5">
+          <p className="mb-3 text-sm font-semibold text-ink">Masuk cepat akun demo</p>
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              ["Player", "player@padelku.id"],
+              ["Venue", "owner@padelku.id"],
+              ["Admin", "admin@padelku.id"],
+            ].map(([label, email]) => (
+              <Button key={email} type="button" variant="secondary" size="sm" disabled={pending} onClick={() => loginAsDemo(email)}>
+                {label}
+              </Button>
+            ))}
+          </div>
         </aside>
       ) : null}
     </div>

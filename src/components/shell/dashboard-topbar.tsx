@@ -2,6 +2,7 @@ import Link from "next/link"
 import { ExternalLink } from "lucide-react"
 import { BrandMark } from "@/components/shell/brand-mark"
 import { type DashboardRole } from "@/components/shell/dashboard-sidebar"
+import { NotificationDrawer } from "@/components/shell/notification-drawer"
 import { type ShellUser, UserMenu } from "@/components/shell/user-menu"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -45,6 +46,7 @@ export function DashboardTopbar({ className, role, user }: DashboardTopbarProps)
               <ExternalLink className="size-3.5" aria-hidden="true" />
             </Link>
           </Button>
+          <NotificationDrawer />
           <UserMenu user={user} />
         </div>
       </div>

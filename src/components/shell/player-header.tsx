@@ -19,6 +19,7 @@ import {
 } from "lucide-react"
 import { BrandMark } from "@/components/shell/brand-mark"
 import { DesktopNav, type PlayerNavItem } from "@/components/shell/desktop-nav"
+import { NotificationDrawer } from "@/components/shell/notification-drawer"
 import { type ShellUser, UserMenu } from "@/components/shell/user-menu"
 import { Button } from "@/components/ui/button"
 import { cn, isRouteActive } from "@/lib/utils"
@@ -146,6 +147,8 @@ export function PlayerHeader({ className, navItems, user }: PlayerHeaderProps) {
               <span>Mitra Venue</span>
             </Link>
           </Button>
+
+          {user && <NotificationDrawer />}
 
           {/* User Profile / Login Action */}
           {user ? (
