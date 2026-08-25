@@ -1,137 +1,73 @@
-"use client"
-
-import { useState } from "react"
 import { Search, SlidersHorizontal, X } from "lucide-react"
-import { Input } from "@/components/ui/input"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
+import type { MarketplaceFilters, MarketplaceSort } from "@/lib/data/marketplace"
 
 interface VenueSearchProps {
-  onSearch: (query: string) => void
-  onFilterChange: (filters: FilterOptions) => void
-  className?: string
+  cities: string[]
+  facilities: string[]
+  filters: MarketplaceFilters
 }
 
-export interface FilterOptions {
-  city?: string
-  minPrice?: number
-  maxPrice?: number
-  sortBy?: "price_asc" | "price_desc" | "rating" | "popular"
-}
-
-const cities = [
-  "Jakarta Selatan",
-  "Jakarta Utara",
-  "Jakarta Barat",
-  "Jakarta Timur",
-  "Jakarta Pusat",
-  "Bandung",
-  "Surabaya",
-  "Bali",
-  "Tangerang",
-  "BSD",
-  "Bekasi",
+const sortOptions: Array<{ label: string; value: MarketplaceSort }> = [
+  { label: "Rekomendasi", value: "recommended" },
+  { label: "Rating tertinggi", value: "rating" },
+  { label: "Harga terendah", value: "price_asc" },
+  { label: "Harga tertinggi", value: "price_desc" },
+  { label: "Nama A-Z", value: "name" },
 ]
 
-export function VenueSearch({ onSearch, onFilterChange, className }: VenueSearchProps) {
-  const [query, setQuery] = useState("")
-  const [showFilters, setShowFilters] = useState(false)
-  const [filters, setFilters] = useState<FilterOptions>({})
-
-  const handleSearch = (value: string) => {
-    setQuery(value)
-    onSearch(value)
-  }
-
-  const updateFilter = (key: keyof FilterOptions, value: string | number | undefined) => {
-    const next = { ...filters, [key]: value || undefined }
-    setFilters(next)
-    onFilterChange(next)
-  }
-
+export function VenueSearch({ cities, facilities, filters }: VenueSearchProps) {
+  const hasFilters = Boolean(filters.q || filters.city || filters.date || filters.facility || (filters.sort && filters.sort !== "recommended"))
   return (
-    <div className={cn("space-y-3", className)}>
-      {/* Search bar */}
-      <div className="flex gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-ink-muted" />
+    <form action="/" method="get" className="border-y border-border bg-surface/80 py-4 backdrop-blur sm:rounded-card sm:border sm:p-4">
+      <div className="grid gap-3 lg:grid-cols-[minmax(14rem,1.5fr)_repeat(4,minmax(8rem,0.75fr))_auto]">
+        <label className="relative block">
+          <span className="sr-only">Cari venue atau lokasi</span>
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-ink-muted" aria-hidden="true" />
           <input
+            name="q"
             type="search"
-            placeholder="Cari venue atau kota..."
-            value={query}
-            onChange={(e) => handleSearch(e.target.value)}
-            className={cn(
-              "w-full h-11 pl-10 pr-4 rounded-[12px] border border-border bg-surface text-body text-ink",
-              "placeholder:text-ink-muted",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30 focus-visible:border-brand"
-            )}
+            defaultValue={filters.q}
+            placeholder="Nama venue atau lokasi"
+            className="h-11 w-full rounded-control border border-border-strong bg-surface pl-10 pr-3 text-sm text-ink placeholder:text-ink-muted"
           />
-        </div>
-        <button
-          onClick={() => setShowFilters(!showFilters)}
-          className={cn(
-            "h-11 w-11 flex items-center justify-center rounded-[12px] border border-border transition-colors",
-            showFilters ? "bg-brand/10 border-brand text-brand" : "bg-surface text-ink-muted"
-          )}
-          aria-label="Filter"
-        >
-          <SlidersHorizontal className="w-5 h-5" />
-        </button>
+        </label>
+        <label>
+          <span className="sr-only">Kota</span>
+          <select name="city" defaultValue={filters.city ?? ""} className="h-11 w-full rounded-control border border-border-strong bg-surface px-3 text-sm text-ink">
+            <option value="">Semua kota</option>
+            {cities.map((city) => <option key={city} value={city}>{city}</option>)}
+          </select>
+        </label>
+        <label>
+          <span className="sr-only">Tanggal bermain</span>
+          <input name="date" type="date" defaultValue={filters.date} className="h-11 w-full rounded-control border border-border-strong bg-surface px-3 text-sm text-ink" />
+        </label>
+        <label>
+          <span className="sr-only">Fasilitas</span>
+          <select name="facility" defaultValue={filters.facility ?? ""} className="h-11 w-full rounded-control border border-border-strong bg-surface px-3 text-sm text-ink">
+            <option value="">Semua fasilitas</option>
+            {facilities.map((facility) => <option key={facility} value={facility}>{facility}</option>)}
+          </select>
+        </label>
+        <label>
+          <span className="sr-only">Urutkan venue</span>
+          <select name="sort" defaultValue={filters.sort ?? "recommended"} className="h-11 w-full rounded-control border border-border-strong bg-surface px-3 text-sm text-ink">
+            {sortOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+          </select>
+        </label>
+        <Button type="submit" className="px-4">
+          <SlidersHorizontal aria-hidden="true" />
+          Terapkan
+        </Button>
       </div>
-
-      {/* Filter panel */}
-      {showFilters && (
-        <div className="bg-surface rounded-card shadow-card p-4 space-y-4 animate-slide-up">
-          <div className="flex items-center justify-between">
-            <h3 className="text-body font-semibold text-ink">Filter</h3>
-            <button
-              onClick={() => {
-                setFilters({})
-                onFilterChange({})
-              }}
-              className="text-caption text-brand"
-            >
-              Reset
-            </button>
-          </div>
-
-          {/* City filter */}
-          <div>
-            <label className="text-caption text-ink-muted mb-2 block">Kota</label>
-            <div className="flex flex-wrap gap-2">
-              {cities.map((city) => (
-                <button
-                  key={city}
-                  onClick={() => updateFilter("city", filters.city === city ? "" : city)}
-                  className={cn(
-                    "px-3 py-1.5 rounded-[12px] text-caption border transition-colors",
-                    filters.city === city
-                      ? "bg-brand/10 border-brand text-brand"
-                      : "border-border text-ink-muted hover:border-ink-muted"
-                  )}
-                >
-                  {city}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Sort */}
-          <div>
-            <label className="text-caption text-ink-muted mb-2 block">Urutkan</label>
-            <select
-              value={filters.sortBy || ""}
-              onChange={(e) => updateFilter("sortBy", e.target.value as any)}
-              className="w-full h-11 rounded-[12px] border border-border bg-surface px-3 text-body text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30"
-            >
-              <option value="">Rekomendasi</option>
-              <option value="price_asc">Harga Terendah</option>
-              <option value="price_desc">Harga Tertinggi</option>
-              <option value="rating">Rating Tertinggi</option>
-            </select>
-          </div>
-        </div>
-      )}
-    </div>
+      {hasFilters ? (
+        <Link href="/" className="mt-3 inline-flex min-h-11 items-center gap-1.5 text-xs font-semibold text-brand hover:text-brand-strong">
+          <X className="size-3.5" aria-hidden="true" />
+          Hapus semua filter
+        </Link>
+      ) : null}
+    </form>
   )
 }

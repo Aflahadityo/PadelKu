@@ -1,8 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import { X, Copy, Check, Banknote, Smartphone, QrCode } from "lucide-react"
+import { Check, Copy, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { formatCurrency } from "@/lib/utils"
 
@@ -11,149 +9,84 @@ interface PaymentModalProps {
   onClose: () => void
   orderId: string
   totalPrice: number
-  paymentUrl?: string
   vaNumber?: string
   bankName?: string
-  qrCode?: string
   expiryTime?: string
+  instructionLabel?: string
+  instructionValue?: string | null
   status: "pending" | "success" | "expired" | "error"
   onCheckStatus: () => void
+  onSimulate?: (command: "SETTLE" | "FAIL") => void
 }
 
 export function PaymentModal({
-  isOpen,
-  onClose,
-  orderId,
-  totalPrice,
-  paymentUrl,
-  vaNumber,
   bankName,
-  qrCode,
   expiryTime,
-  status,
+  isOpen,
+  instructionLabel,
+  instructionValue,
   onCheckStatus,
+  onClose,
+  onSimulate,
+  orderId,
+  status,
+  totalPrice,
+  vaNumber,
 }: PaymentModalProps) {
-  const [copied, setCopied] = useState(false)
-
-  const copyToClipboard = async (text: string) => {
-    await navigator.clipboard.writeText(text)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
+  if (!isOpen) return null
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 bg-ink/50 flex items-end sm:items-center justify-center"
-          onClick={onClose}
-        >
-          <motion.div
-            initial={{ y: 100, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 100, opacity: 0 }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="bg-surface rounded-t-[16px] sm:rounded-[16px] w-full max-w-md p-6 max-h-[90vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="text-h2 font-display text-ink">Pembayaran</h2>
-              <button onClick={onClose} className="p-1" aria-label="Tutup">
-                <X className="w-5 h-5 text-ink-muted" />
-              </button>
-            </div>
+    <div className="fixed inset-0 z-50 grid place-items-end bg-ink/55 sm:place-items-center" onMouseDown={onClose}>
+      <section
+        aria-labelledby="payment-title"
+        aria-modal="true"
+        role="dialog"
+        className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-t-card bg-surface p-6 shadow-float sm:rounded-card"
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        <header className="mb-5 flex items-center justify-between">
+          <h2 id="payment-title" className="font-display text-xl font-bold text-ink">Pembayaran</h2>
+          <button type="button" onClick={onClose} className="grid size-11 place-items-center" aria-label="Tutup pembayaran">
+            <X className="size-5" aria-hidden="true" />
+          </button>
+        </header>
 
-            {status === "pending" && (
-              <div className="space-y-5">
-                <div className="bg-canvas rounded-control p-4 space-y-3">
-                  <div className="flex justify-between text-body">
-                    <span className="text-ink-muted">Total</span>
-                    <span className="font-mono font-bold text-ink">{formatCurrency(totalPrice)}</span>
-                  </div>
-                  <div className="flex justify-between text-body">
-                    <span className="text-ink-muted">ID Order</span>
-                    <span className="font-mono text-sm text-ink">{orderId}</span>
-                  </div>
+        {status === "pending" ? (
+          <div className="space-y-5">
+            <dl className="space-y-3 bg-surface-muted p-4 text-sm">
+              <div className="flex justify-between gap-4"><dt className="text-ink-muted">Total</dt><dd className="font-mono font-bold">{formatCurrency(totalPrice)}</dd></div>
+              <div className="flex justify-between gap-4"><dt className="text-ink-muted">ID Order</dt><dd className="font-mono">{orderId}</dd></div>
+            </dl>
+            {vaNumber || instructionValue ? (
+              <div>
+                <p className="mb-2 text-sm font-semibold">{instructionLabel ?? `Transfer ke ${bankName}`}</p>
+                <div className="flex items-center gap-2 border border-border p-3">
+                  <span className="min-w-0 flex-1 break-all font-mono text-sm font-bold tracking-wide">{instructionValue ?? vaNumber}</span>
+                  <button type="button" onClick={() => navigator.clipboard.writeText(instructionValue ?? vaNumber ?? "")} className="grid size-11 place-items-center" aria-label="Salin instruksi pembayaran">
+                    <Copy className="size-4" aria-hidden="true" />
+                  </button>
                 </div>
-
-                {vaNumber && (
-                  <div className="space-y-3">
-                    <p className="text-body text-ink font-medium">
-                      Transfer ke {bankName}
-                    </p>
-                    <div className="flex items-center gap-2 bg-canvas rounded-control p-4">
-                      <span className="font-mono text-h2 text-ink flex-1 tracking-wider">
-                        {vaNumber}
-                      </span>
-                      <button
-                        onClick={() => copyToClipboard(vaNumber)}
-                        className="p-2 hover:bg-border/40 rounded-control transition-colors"
-                        aria-label="Salin nomor VA"
-                      >
-                        {copied ? (
-                          <Check className="w-5 h-5 text-success" />
-                        ) : (
-                          <Copy className="w-5 h-5 text-ink-muted" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {qrCode && (
-                  <div className="space-y-3 text-center">
-                    <p className="text-body text-ink font-medium">Scan QRIS</p>
-                    <div className="bg-surface border-2 border-border rounded-card p-4 inline-block mx-auto">
-                      <img src={qrCode} alt="QR Code Pembayaran" className="w-48 h-48" />
-                    </div>
-                  </div>
-                )}
-
-                {expiryTime && (
-                  <p className="text-caption text-urgent text-center">
-                    Batas pembayaran: {expiryTime}
-                  </p>
-                )}
-
-                <Button
-                  variant="primary"
-                  className="w-full"
-                  size="lg"
-                  onClick={onCheckStatus}
-                >
-                  Cek Status Pembayaran
-                </Button>
               </div>
-            )}
-
-            {status === "success" && (
-              <div className="text-center space-y-4 py-4">
-                <div className="w-16 h-16 rounded-full bg-success flex items-center justify-center mx-auto">
-                  <Check className="w-8 h-8 text-white" />
-                </div>
-                <p className="text-body text-ink font-medium">Pembayaran Berhasil!</p>
-                <Button variant="primary" className="w-full" onClick={onClose}>
-                  Selesai
-                </Button>
+            ) : null}
+            {expiryTime ? <p className="text-center text-xs font-semibold text-error">Batas pembayaran: {expiryTime}</p> : null}
+            <Button type="button" className="w-full" onClick={onCheckStatus}>Cek status pembayaran</Button>
+            {onSimulate ? (
+              <div className="grid grid-cols-2 gap-2 border-t border-border pt-4">
+                <Button type="button" variant="secondary" onClick={() => onSimulate("SETTLE")}>Simulasi lunas</Button>
+                <Button type="button" variant="destructive" onClick={() => onSimulate("FAIL")}>Simulasi gagal</Button>
               </div>
-            )}
-
-            {status === "expired" && (
-              <div className="text-center space-y-4 py-4">
-                <p className="text-body text-error font-medium">
-                  Pembayaran telah expired. Booking dibatalkan.
-                </p>
-                <Button variant="secondary" className="w-full" onClick={onClose}>
-                  Tutup
-                </Button>
-              </div>
-            )}
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+            ) : null}
+          </div>
+        ) : (
+          <div className="space-y-5 py-4 text-center">
+            {status === "success" ? <Check className="mx-auto size-12 text-success" aria-hidden="true" /> : null}
+            <p className={status === "success" ? "font-semibold text-success" : "font-semibold text-error"}>
+              {status === "success" ? "Pembayaran berhasil." : status === "expired" ? "Pembayaran kedaluwarsa." : "Pembayaran gagal. Coba lagi."}
+            </p>
+            <Button type="button" variant="secondary" className="w-full" onClick={onClose}>Tutup</Button>
+          </div>
+        )}
+      </section>
+    </div>
   )
 }

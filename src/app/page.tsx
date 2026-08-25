@@ -1,79 +1,35 @@
-import Link from "next/link"
-import { Search } from "lucide-react"
+import { MobileTabBar } from "@/components/shell/mobile-tab-bar"
+import { PlayerHeader } from "@/components/shell/player-header"
+import { EmptyState } from "@/components/ui/empty-state"
+import { PageHeader } from "@/components/ui/page-header"
 import { VenueCard } from "@/components/venue/venue-card"
 import { VenueSearch } from "@/components/venue/venue-search"
+import { getMarketplaceDiscovery, type MarketplaceFilters, type MarketplaceSort } from "@/lib/data/marketplace"
+import { getOptionalShellPlayer } from "@/lib/data/player"
 
-// Placeholder data for static demo
-const demoVenues = [
-  {
-    id: "1", name: "Padel House Kemang", slug: "padel-house-kemang", city: "Jakarta Selatan",
-    photoUrl: "https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=800&q=80",
-    priceRange: { min: 150000, max: 250000 }, rating: 4.5, reviewCount: 28,
-    facilities: ["Indoor", "Parkir", "Kantin"], isVerified: true, availableToday: true, slotsLeftToday: 3,
-  },
-  {
-    id: "2", name: "Arena Padel BSD", slug: "arena-padel-bsd", city: "BSD",
-    photoUrl: "https://images.unsplash.com/photo-1614064641938-3bbee52942c7?w=800&q=80",
-    priceRange: { min: 120000, max: 200000 }, rating: 4.2, reviewCount: 15,
-    facilities: ["Outdoor", "Parkir"], isVerified: true, availableToday: true,
-  },
-  {
-    id: "3", name: "Canggu Padel Club", slug: "canggu-padel-club", city: "Bali",
-    photoUrl: "https://images.unsplash.com/photo-1577412647305-991150c7d163?w=800&q=80",
-    priceRange: { min: 180000, max: 300000 }, rating: 4.8, reviewCount: 42,
-    facilities: ["Indoor", "Outdoor", "Parkir", "Kantin", "Pro Shop"], isVerified: true, availableToday: true, slotsLeftToday: 2,
-  },
-  {
-    id: "4", name: "Padel Studio Bandung", slug: "padel-studio-bandung", city: "Bandung",
-    photoUrl: "https://images.unsplash.com/photo-1593078165899-8e00959c7a24?w=800&q=80",
-    priceRange: { min: 130000, max: 180000 }, rating: 4.0, reviewCount: 9,
-    facilities: ["Indoor", "Parkir", "AC"], isVerified: false, availableToday: false,
-  },
-  {
-    id: "5", name: "Surabaya Padel Center", slug: "surabaya-padel-center", city: "Surabaya",
-    photoUrl: "https://images.unsplash.com/photo-1560090995-01632a28895b?w=800&q=80",
-    priceRange: { min: 120000, max: 160000 }, rating: 4.3, reviewCount: 21,
-    facilities: ["Outdoor", "Parkir", "Mushola"], isVerified: true, availableToday: true,
-  },
-  {
-    id: "6", name: "Padel Sportivo Senayan", slug: "padel-sportivo-senayan", city: "Jakarta Pusat",
-    photoUrl: "https://images.unsplash.com/photo-1534158914592-062992fbe900?w=800&q=80",
-    priceRange: { min: 200000, max: 350000 }, rating: 4.6, reviewCount: 35,
-    facilities: ["Indoor", "Parkir", "Kantin", "AC", "Pro Shop"], isVerified: true, availableToday: true, slotsLeftToday: 1,
-  },
-]
+type SearchParams = Promise<Record<string, string | string[] | undefined>>
+const single = (value: string | string[] | undefined) => Array.isArray(value) ? value[0] : value
 
-export default function HomePage() {
+export default async function HomePage({ searchParams }: { searchParams: SearchParams }) {
+  const raw = await searchParams
+  const filters: MarketplaceFilters = {
+    city: single(raw.city), date: single(raw.date), facility: single(raw.facility), q: single(raw.q),
+    sort: single(raw.sort) as MarketplaceSort | undefined,
+  }
+  const [discovery, user] = await Promise.all([getMarketplaceDiscovery(filters), getOptionalShellPlayer()])
   return (
-    <div className="space-y-4 pt-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-h1 font-display text-ink">
-            Cari Lapangan
-          </h1>
-          <p className="text-body text-ink-muted">Temukan venue padel terdekat</p>
-        </div>
-        <Link
-          href="/login"
-          className="btn-secondary text-caption px-4 py-2 h-auto"
-        >
-          Masuk
-        </Link>
-      </div>
-
-      {/* Search */}
-      <VenueSearch
-        onSearch={() => {}}
-        onFilterChange={() => {}}
-      />
-
-      {/* Venue grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {demoVenues.map((venue) => (
-          <VenueCard key={venue.id} {...venue} />
-        ))}
-      </div>
+    <div className="min-h-dvh bg-canvas pb-24 md:pb-16">
+      <PlayerHeader user={user ?? undefined} />
+      <main className="safe-area-x mx-auto max-w-7xl space-y-8 py-8 sm:py-12">
+        <PageHeader eyebrow="Marketplace venue terverifikasi" title="Temukan lapangan. Pilih waktu. Main." description="Ketersediaan dan harga dibaca langsung dari jadwal venue." />
+        <VenueSearch cities={discovery.cities} facilities={discovery.facilities} filters={filters} />
+        {discovery.venues.length ? (
+          <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-3" aria-label="Daftar venue">
+            {discovery.venues.map((venue) => <VenueCard key={venue.id} venue={venue} date={filters.date} />)}
+          </section>
+        ) : <EmptyState title="Venue tidak ditemukan" description="Ubah lokasi, tanggal, atau fasilitas yang dipilih." />}
+      </main>
+      <MobileTabBar />
     </div>
   )
 }

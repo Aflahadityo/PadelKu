@@ -1,45 +1,17 @@
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { AuthForm } from "../auth-form"
 
 export default function RegisterPage() {
   return (
-    <div className="flex flex-col min-h-screen pt-20 px-4 max-w-sm mx-auto">
-      <div className="text-center mb-8">
-        <h1 className="text-h1 font-display text-ink">Daftar</h1>
-        <p className="text-body text-ink-muted mt-2">
-          Buat akun PadelKu baru
-        </p>
+    <div className="w-full py-4">
+      <div className="mb-8">
+        <p className="mb-3 font-mono text-xs uppercase tracking-[0.16em] text-brand">Mulai di sini</p>
+        <h1 className="font-display text-4xl font-semibold tracking-[-0.035em] text-ink sm:text-5xl">Buat akun PadelKu.</h1>
+        <p className="mt-3 text-base leading-7 text-ink-muted">Pilih akun pemain atau mitra venue. Akun admin tidak dapat didaftarkan publik.</p>
       </div>
-
-      <form className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="name">Nama Lengkap</Label>
-          <Input id="name" placeholder="Nama kamu" />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <Input id="email" type="email" placeholder="nama@email.com" />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="phone">No. WhatsApp (opsional)</Label>
-          <Input id="phone" type="tel" placeholder="0812xxxxxxx" />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="password">Kata Sandi</Label>
-          <Input id="password" type="password" placeholder="Min. 8 karakter" />
-        </div>
-        <Button variant="primary" className="w-full" size="lg">
-          Daftar
-        </Button>
-      </form>
-
-      <p className="text-center text-body text-ink-muted mt-6">
-        Sudah punya akun?{" "}
-        <Link href="/login" className="text-brand font-medium hover:underline">
-          Masuk
-        </Link>
+      <AuthForm kind="register" />
+      <p className="mt-7 text-center text-sm text-ink-muted">
+        Sudah punya akun? <Link href="/login" className="font-semibold text-brand hover:underline">Masuk</Link>
       </p>
     </div>
   )

@@ -12,6 +12,7 @@ interface BookingSummaryProps {
   price: number
   onConfirm: () => void
   isProcessing?: boolean
+  submitLabel?: string
 }
 
 export function BookingSummary({
@@ -23,6 +24,7 @@ export function BookingSummary({
   price,
   onConfirm,
   isProcessing,
+  submitLabel = "Booking Sekarang",
 }: BookingSummaryProps) {
   return (
     <div className="bg-surface rounded-card shadow-card p-5 space-y-4">
@@ -60,7 +62,7 @@ export function BookingSummary({
         onClick={onConfirm}
         disabled={isProcessing}
       >
-        {isProcessing ? "Memproses..." : "Booking Sekarang"}
+        {isProcessing ? "Memproses..." : submitLabel}
       </Button>
     </div>
   )

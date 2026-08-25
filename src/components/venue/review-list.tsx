@@ -1,57 +1,30 @@
-"use client"
+import { Star, UserRound } from "lucide-react"
+import type { VenueReview } from "@/lib/data/marketplace"
 
-import { Star, User } from "lucide-react"
-import { formatDate } from "@/lib/utils"
-
-interface Review {
-  id: string
-  rating: number
-  comment: string | null
-  createdAt: Date
-  user: {
-    name: string
-    avatarUrl: string | null
-  }
-}
-
-interface ReviewListProps {
-  reviews: Review[]
-}
-
-export function ReviewList({ reviews }: ReviewListProps) {
+export function ReviewList({ reviews }: { reviews: VenueReview[] }) {
   if (reviews.length === 0) {
-    return (
-      <div className="text-center py-8 text-ink-muted">
-        <p className="text-body">Belum ada review untuk venue ini.</p>
-      </div>
-    )
+    return <p className="border-y border-border py-10 text-sm text-ink-muted">Belum ada ulasan untuk venue ini.</p>
   }
-
   return (
-    <div className="space-y-4">
+    <div className="divide-y divide-border border-y border-border">
       {reviews.map((review) => (
-        <div key={review.id} className="bg-surface rounded-card p-4 space-y-2">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-brand/20 flex items-center justify-center">
-              {review.user.avatarUrl ? (
-                <img src={review.user.avatarUrl} alt="" className="w-10 h-10 rounded-full object-cover" />
-              ) : (
-                <User className="w-5 h-5 text-brand" />
-              )}
-            </div>
-            <div className="flex-1">
-              <p className="text-body font-medium text-ink">{review.user.name}</p>
-              <p className="text-caption text-ink-muted">{formatDate(review.createdAt)}</p>
-            </div>
-            <div className="flex items-center gap-0.5">
-              <Star className="w-4 h-4 text-[#F4B740] fill-[#F4B740]" />
-              <span className="text-body font-medium text-ink">{review.rating}</span>
-            </div>
+        <article key={review.id} className="grid gap-3 py-5 sm:grid-cols-[12rem_1fr] sm:py-7">
+          <div>
+            <p className="flex items-center gap-2 text-sm font-semibold text-ink">
+              <span className="grid size-8 place-items-center rounded-control bg-surface-muted"><UserRound className="size-4" aria-hidden="true" /></span>
+              {review.reviewerName ?? "Pemain terverifikasi"}
+            </p>
+            <time dateTime={review.createdAt} className="mt-2 block font-mono text-[0.7rem] text-ink-muted">
+              {new Intl.DateTimeFormat("id-ID", { day: "numeric", month: "short", year: "numeric" }).format(new Date(review.createdAt))}
+            </time>
           </div>
-          {review.comment && (
-            <p className="text-body text-ink-muted leading-relaxed">{review.comment}</p>
-          )}
-        </div>
+          <div>
+            <p className="flex gap-0.5" aria-label={`${review.rating} dari 5 bintang`}>
+              {Array.from({ length: 5 }, (_, index) => <Star key={index} className={`size-4 ${index < review.rating ? "fill-warning text-warning" : "text-border-strong"}`} aria-hidden="true" />)}
+            </p>
+            {review.comment ? <p className="mt-3 max-w-2xl text-sm leading-6 text-ink-muted">{review.comment}</p> : null}
+          </div>
+        </article>
       ))}
     </div>
   )

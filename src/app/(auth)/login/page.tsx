@@ -1,46 +1,46 @@
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { safeRedirectPath } from "@/lib/auth"
+import { AuthForm } from "../auth-form"
 
-export default function LoginPage() {
+const messages: Record<string, string> = {
+  "password-updated": "Kata sandi berhasil diperbarui. Silakan masuk kembali.",
+}
+
+const errors: Record<string, string> = {
+  auth: "Tautan autentikasi tidak valid atau sudah kedaluwarsa.",
+  profile: "Profil akun belum tersedia. Hubungi dukungan PadelKu.",
+  configuration: "Supabase belum dikonfigurasi untuk environment ini.",
+}
+
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string; message?: string; error?: string }>
+}) {
+  const params = await searchParams
+  const initialMessage = params.error
+    ? errors[params.error] ?? "Autentikasi gagal. Silakan coba lagi."
+    : params.message
+      ? messages[params.message]
+      : undefined
+
   return (
-    <div className="flex flex-col min-h-screen pt-20 px-4 max-w-sm mx-auto">
-      <div className="text-center mb-8">
-        <h1 className="text-h1 font-display text-ink">Masuk</h1>
-        <p className="text-body text-ink-muted mt-2">
-          Masuk ke akun PadelKu kamu
-        </p>
+    <div className="w-full">
+      <div className="mb-8">
+        <p className="mb-3 font-mono text-xs uppercase tracking-[0.16em] text-brand">Selamat datang kembali</p>
+        <h1 className="font-display text-4xl font-semibold tracking-[-0.035em] text-ink sm:text-5xl">Masuk dan main.</h1>
+        <p className="mt-3 max-w-sm text-base leading-7 text-ink-muted">Booking lapangan, cek jadwal, dan kelola pertandingan dari satu tempat.</p>
       </div>
-
-      <form className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <Input id="email" type="email" placeholder="nama@email.com" />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="password">Kata Sandi</Label>
-          <Input id="password" type="password" placeholder="••••••••" />
-        </div>
-        <Button variant="primary" className="w-full" size="lg">
-          Masuk
-        </Button>
-      </form>
-
-      <p className="text-center text-body text-ink-muted mt-6">
-        Belum punya akun?{" "}
-        <Link href="/register" className="text-brand font-medium hover:underline">
-          Daftar
-        </Link>
+      <AuthForm
+        kind="login"
+        next={params.next ? safeRedirectPath(params.next, "/") : undefined}
+        initialMessage={initialMessage}
+        initialStatus={params.error ? "error" : "success"}
+        showDemo={process.env.NODE_ENV === "development"}
+      />
+      <p className="mt-7 text-center text-sm text-ink-muted">
+        Belum punya akun? <Link href="/register" className="font-semibold text-brand hover:underline">Daftar sekarang</Link>
       </p>
-
-      {/* Demo credentials hint */}
-      <div className="mt-8 bg-border/30 rounded-control p-4 text-caption text-ink-muted space-y-1">
-        <p className="font-medium text-ink">Akun Demo:</p>
-        <p>Player: player@padelku.id / password123</p>
-        <p>Venue Owner: owner@padelku.id / password123</p>
-        <p>Admin: admin@padelku.id / password123</p>
-      </div>
     </div>
   )
 }

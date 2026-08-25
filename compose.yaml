@@ -1,0 +1,8 @@
+name: padelku
+
+include:
+  - path:
+      - .supabase/docker/docker-compose.yml
+      - infra/supabase/compose.app.yaml
+    project_directory: .supabase/docker
+    env_file: .supabase/docker/.env

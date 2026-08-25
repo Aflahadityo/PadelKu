@@ -1,99 +1,153 @@
-import { Badge } from "@/components/ui/badge"
+import Link from "next/link"
+import { Building2, CalendarClock, Check, CircleAlert, ImageIcon, MapPin, Phone, WalletCards, X } from "lucide-react"
+import { DashboardForm } from "@/components/dashboard/dashboard-form"
+import { Panel, SectionTitle } from "@/components/dashboard/panel"
+import { StatusBadge } from "@/components/dashboard/status-badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Check, X, Building2 } from "lucide-react"
+import { EmptyState } from "@/components/ui/empty-state"
+import { Metric } from "@/components/ui/metric"
+import { PageHeader } from "@/components/ui/page-header"
+import { approveVenueAction, rejectVenueAction } from "@/lib/dashboard/admin-actions"
+import { getAdminOverview } from "@/lib/dashboard/admin-data"
+import { formatCurrency } from "@/lib/utils"
 
-const pendingVenues = [
-  { id: "v1", name: "Padel Studio Menteng", owner: "Budi Santoso", city: "Jakarta Pusat", submittedAt: "2 hari lalu" },
-  { id: "v2", name: "Padel Point Gading", owner: "Sari Dewi", city: "Jakarta Utara", submittedAt: "1 hari lalu" },
-]
+const dateFormatter = new Intl.DateTimeFormat("id-ID", { dateStyle: "medium", timeStyle: "short" })
 
-const approvedVenues = [
-  { id: "v3", name: "Padel House Kemang", owner: "Ari Wibowo", city: "Jakarta Selatan", bookings: 45 },
-  { id: "v4", name: "Arena Padel BSD", owner: "Dian Permata", city: "BSD", bookings: 28 },
-]
+export default async function AdminPage() {
+  const overview = await getAdminOverview()
 
-export default function AdminPage() {
   return (
-    <div className="space-y-6 pt-4 pb-8">
-      <h1 className="text-h1 font-display text-ink">Panel Admin</h1>
+    <main className="space-y-8">
+      <PageHeader
+        eyebrow="Operasional hari ini"
+        title="Pusat kendali"
+        description="Verifikasi venue sebelum tayang. Pantau volume transaksi tanpa mengubah catatan pembayaran."
+        actions={
+          <Button asChild variant="secondary">
+            <Link href="/admin/transactions"><WalletCards aria-hidden="true" /> Lihat transaksi</Link>
+          </Button>
+        }
+      />
 
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-3">
-        <Card>
-          <CardContent className="p-4 text-center">
-            <p className="text-h2 font-bold font-mono text-ink">{pendingVenues.length}</p>
-            <p className="text-caption text-ink-muted">Pending</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <p className="text-h2 font-bold font-mono text-ink">{approvedVenues.length + pendingVenues.length}</p>
-            <p className="text-caption text-ink-muted">Total Venue</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <p className="text-h2 font-bold font-mono text-ink">73</p>
-            <p className="text-caption text-ink-muted">Booking</p>
-          </CardContent>
-        </Card>
-      </div>
+      <section aria-label="Ringkasan platform" className="grid gap-6 border-b border-border pb-8 sm:grid-cols-2 xl:grid-cols-4">
+        <Metric label="Menunggu verifikasi" value={overview.pendingVenues.length} detail="Diproses dari antrean terlama" />
+        <Metric label="Venue aktif" value={overview.approvedVenueCount} detail={`${overview.suspendedVenueCount} venue ditangguhkan`} />
+        <Metric label="Total booking" value={overview.bookingCount} detail={`${overview.totalUserCount} akun terdaftar`} />
+        <Metric label="Pembayaran lunas" value={formatCurrency(overview.settledRevenueRupiah)} detail="Nilai bruto, bukan komisi platform" />
+      </section>
 
-      {/* Pending approvals */}
-      <div>
-        <h2 className="text-h2 font-display text-ink mb-3">Persetujuan Venue Baru</h2>
-        {pendingVenues.length === 0 ? (
-          <div className="text-center py-8 text-ink-muted">
-            <Building2 className="w-12 h-12 mx-auto mb-2 text-border" />
-            <p className="text-body">Tidak ada venue yang perlu disetujui.</p>
-          </div>
+      <Panel className="p-0 sm:p-0">
+        <div className="p-5 sm:p-6">
+          <SectionTitle detail={`${overview.pendingVenues.length} dari ${overview.totalVenueCount} venue`}>
+            Antrean verifikasi venue
+          </SectionTitle>
+          <p className="max-w-2xl text-sm leading-6 text-ink-muted">
+            Persetujuan membuka venue ke marketplace. Pastikan lokasi, kontak, foto, dan lapangan aktif sudah layak.
+          </p>
+        </div>
+
+        {overview.pendingVenues.length === 0 ? (
+          <EmptyState
+            className="border-x-0 border-b-0"
+            icon={<Building2 aria-hidden="true" />}
+            title="Antrean sudah bersih"
+            description="Venue baru yang dikirim pemilik akan muncul di sini."
+          />
         ) : (
-          <div className="space-y-3">
-            {pendingVenues.map((venue) => (
-              <Card key={venue.id}>
-                <CardContent className="p-4 space-y-3">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h3 className="text-body font-semibold text-ink">{venue.name}</h3>
-                      <p className="text-caption text-ink-muted">
-                        {venue.owner} · {venue.city} · {venue.submittedAt}
-                      </p>
+          <div className="divide-y divide-border border-t border-border">
+            {overview.pendingVenues.map((venue, index) => {
+              const ready = venue.activeCourtCount > 0 && venue.imageCount > 0 && Boolean(venue.phone)
+              return (
+                <article key={venue.id} className="grid gap-6 p-5 sm:p-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span className="font-mono text-xs font-semibold text-ink-muted">#{String(index + 1).padStart(2, "0")}</span>
+                      <StatusBadge status="PENDING" />
+                      <time className="text-xs text-ink-muted" dateTime={venue.submittedAt}>
+                        Dikirim {dateFormatter.format(new Date(venue.submittedAt))}
+                      </time>
                     </div>
-                    <Badge variant="urgent">Pending</Badge>
+                    <h2 className="mt-4 text-wrap-balance font-display text-3xl font-bold leading-none tracking-[-0.045em] text-ink sm:text-4xl">
+                      {venue.name}
+                    </h2>
+                    <p className="mt-3 text-sm font-semibold text-ink">{venue.ownerName}</p>
+                    <p className="text-xs text-ink-muted">{venue.ownerEmail}</p>
+
+                    <dl className="mt-6 grid gap-x-6 gap-y-4 border-y border-border py-5 sm:grid-cols-2 lg:grid-cols-3">
+                      <div>
+                        <dt className="flex items-center gap-2 text-xs font-semibold text-ink-muted"><MapPin className="size-4" aria-hidden="true" /> Lokasi</dt>
+                        <dd className="mt-1 text-sm leading-6 text-ink">{venue.address}, {venue.city}, {venue.province}</dd>
+                      </div>
+                      <div>
+                        <dt className="flex items-center gap-2 text-xs font-semibold text-ink-muted"><CalendarClock className="size-4" aria-hidden="true" /> Jam operasional</dt>
+                        <dd className="mt-1 font-mono text-sm text-ink">{venue.openingTime} - {venue.closingTime}</dd>
+                      </div>
+                      <div>
+                        <dt className="flex items-center gap-2 text-xs font-semibold text-ink-muted"><Phone className="size-4" aria-hidden="true" /> Kontak</dt>
+                        <dd className="mt-1 text-sm text-ink">{venue.phone ?? "Belum diisi"}</dd>
+                      </div>
+                    </dl>
+
+                    <div className="mt-5 flex flex-wrap gap-2">
+                      <span className="border border-border px-2.5 py-1.5 text-xs font-semibold text-ink">
+                        {venue.activeCourtCount} lapangan aktif
+                      </span>
+                      <span className="flex items-center gap-1.5 border border-border px-2.5 py-1.5 text-xs font-semibold text-ink">
+                        <ImageIcon className="size-3.5" aria-hidden="true" /> {venue.imageCount} foto
+                      </span>
+                      {venue.facilities.map((facility) => <span key={facility} className="bg-surface-muted px-2.5 py-1.5 text-xs text-ink-muted">{facility}</span>)}
+                    </div>
+
+                    {!ready ? (
+                      <p className="mt-5 flex gap-2 border-l-2 border-warning pl-3 text-xs leading-5 text-ink-muted">
+                        <CircleAlert className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden="true" />
+                        Checklist belum lengkap. Persetujuan tetap memvalidasi minimal satu lapangan aktif di server.
+                      </p>
+                    ) : null}
                   </div>
-                  <div className="flex gap-2">
-                    <Button variant="secondary" size="sm" className="flex-1">
-                      <X className="w-4 h-4 mr-1" />
-                      Tolak
-                    </Button>
-                    <Button variant="primary" size="sm" className="flex-1">
-                      <Check className="w-4 h-4 mr-1" />
-                      Setujui
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+
+                  <aside className="border-t border-border pt-5 xl:border-l xl:border-t-0 xl:pl-6 xl:pt-0">
+                    <p className="text-sm font-semibold text-ink">Keputusan admin</p>
+                    <p className="mt-1 text-xs leading-5 text-ink-muted">Tindakan tercatat bersama akun admin dan waktu review.</p>
+                    <DashboardForm
+                      action={approveVenueAction.bind(null, venue.id)}
+                      className="mt-5"
+                      disabled={venue.activeCourtCount === 0}
+                      pendingLabel="Menyetujui"
+                      submitLabel="Setujui venue"
+                    >
+                      <p className="flex items-center gap-2 text-xs font-semibold text-success"><Check className="size-4" aria-hidden="true" /> Publikasikan ke marketplace</p>
+                    </DashboardForm>
+                    <details className="group mt-5 border-t border-border pt-5">
+                      <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 text-sm font-semibold text-error marker:content-none [&::-webkit-details-marker]:hidden">
+                        <X className="size-4" aria-hidden="true" /> Tolak pengajuan
+                      </summary>
+                      <DashboardForm
+                        action={rejectVenueAction.bind(null, venue.id)}
+                        className="mt-3"
+                        pendingLabel="Menolak"
+                        submitLabel="Simpan penolakan"
+                        variant="destructive"
+                      >
+                        <label className="block text-xs font-semibold text-ink" htmlFor={`reason-${venue.id}`}>Alasan untuk pemilik</label>
+                        <textarea
+                          id={`reason-${venue.id}`}
+                          name="reason"
+                          required
+                          minLength={10}
+                          maxLength={500}
+                          placeholder="Contoh: Foto venue belum memperlihatkan kondisi lapangan secara jelas."
+                          className="min-h-28 w-full resize-y rounded-control border border-border-strong bg-surface p-3 text-sm text-ink placeholder:text-ink-muted focus-visible:border-brand focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-brand/15"
+                        />
+                      </DashboardForm>
+                    </details>
+                  </aside>
+                </article>
+              )
+            })}
           </div>
         )}
-      </div>
-
-      {/* Approved venues */}
-      <div>
-        <h2 className="text-h2 font-display text-ink mb-3">Venue Terverifikasi</h2>
-        <div className="space-y-2">
-          {approvedVenues.map((venue) => (
-            <div key={venue.id} className="bg-surface rounded-control p-3 flex items-center justify-between">
-              <div>
-                <p className="text-body font-medium text-ink">{venue.name}</p>
-                <p className="text-caption text-ink-muted">{venue.city} · {venue.bookings} booking</p>
-              </div>
-              <Badge variant="success">Aktif</Badge>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
+      </Panel>
+    </main>
   )
 }

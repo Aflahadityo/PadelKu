@@ -1,47 +1,38 @@
-import { VenueHeader } from "@/components/venue/venue-header"
+import Link from "next/link"
+import { notFound } from "next/navigation"
+import { ArrowLeft } from "lucide-react"
+import { MobileTabBar } from "@/components/shell/mobile-tab-bar"
+import { PlayerHeader } from "@/components/shell/player-header"
+import { ReviewList } from "@/components/venue/review-list"
 import { VenueCourtGrid } from "@/components/venue/venue-court-grid"
+import { VenueHeader } from "@/components/venue/venue-header"
+import { getVenueDetail } from "@/lib/data/marketplace"
+import { getOptionalShellPlayer } from "@/lib/data/player"
 
-const demoVenue = {
-  id: "1",
-  name: "Padel House Kemang",
-  photos: [
-    "https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=1200&q=80",
-    "https://images.unsplash.com/photo-1614064641938-3bbee52942c7?w=1200&q=80",
-    "https://images.unsplash.com/photo-1577412647305-991150c7d163?w=1200&q=80",
-  ],
-  city: "Jakarta Selatan",
-  address: "Jl. Kemang Raya No. 42",
-  rating: 4.5,
-  reviewCount: 28,
-  facilities: ["Indoor", "Parkir", "Kantin", "AC", "Mushola"],
-  openingTime: "08:00",
-  closingTime: "22:00",
-  phone: "021-2278-9012",
-  description: "Venue padel indoor premium di jantung Kemang. Dilengkapi 4 lapangan berstandar internasional, cafe, dan pro shop. Cocok untuk main santai maupun latihan rutin.",
-  startingPrice: 150000,
-  courts: [
-    { id: "c1", name: "Lapangan 1", courtNumber: 1, pricePerHour: 250000, isActive: true },
-    { id: "c2", name: "Lapangan 2", courtNumber: 2, pricePerHour: 200000, isActive: true },
-    { id: "c3", name: "Lapangan 3", courtNumber: 3, pricePerHour: 180000, isActive: true },
-    { id: "c4", name: "Lapangan 4", courtNumber: 4, pricePerHour: 150000, isActive: false },
-  ],
-}
+export default async function VenueDetailPage({ params }: { params: Promise<{ venueId: string }> }) {
+  const { venueId } = await params
+  const [venue, user] = await Promise.all([getVenueDetail(venueId), getOptionalShellPlayer()])
+  if (!venue) notFound()
 
-export default function VenueDetailPage() {
   return (
-    <div className="space-y-4 pt-4 pb-8">
-      <VenueHeader {...demoVenue} />
-
-      <div className="pt-4">
-        <h2 className="text-h2 font-display text-ink mb-4 px-1">Pilih Jadwal</h2>
-        <VenueCourtGrid venueId={demoVenue.id} courts={demoVenue.courts} />
-      </div>
-
-      {/* Reviews section placeholder */}
-      <div className="pt-4 px-1">
-        <h2 className="text-h2 font-display text-ink mb-4">Ulasan</h2>
-        <p className="text-body text-ink-muted">Fitur review akan tersedia setelah booking.</p>
-      </div>
+    <div className="min-h-screen bg-canvas pb-24 text-ink md:pb-16">
+      <PlayerHeader user={user ?? undefined} />
+      <main className="safe-area-x mx-auto max-w-7xl space-y-8 pt-4">
+        <Link href="/" className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-ink-muted hover:text-ink">
+          <ArrowLeft className="size-4" aria-hidden="true" /> Kembali ke pencarian
+        </Link>
+        <VenueHeader venue={venue} />
+        <section className="border-t border-border pt-8">
+          <p className="font-mono text-xs font-bold uppercase tracking-[0.14em] text-brand">Pilih waktu main</p>
+          <h2 className="mt-2 font-display text-3xl font-bold tracking-[-0.04em] text-ink">Jadwal lapangan</h2>
+          <VenueCourtGrid venueId={venue.id} venueName={venue.name} />
+        </section>
+        <section className="py-8">
+          <h2 className="mb-5 font-display text-3xl font-bold tracking-[-0.04em] text-ink">Ulasan pemain</h2>
+          <ReviewList reviews={venue.reviews} />
+        </section>
+      </main>
+      <MobileTabBar />
     </div>
   )
 }

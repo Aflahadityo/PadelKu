@@ -1,48 +1,30 @@
-import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { NextResponse } from "next/server"
+import {
+  getMarketplaceDiscovery,
+  isValidLocalDate,
+  type MarketplaceSort,
+} from "@/lib/data/marketplace"
 
-export async function GET(req: Request) {
+const sorts = new Set<MarketplaceSort>(["recommended", "rating", "price_asc", "price_desc", "name"])
+
+export async function GET(request: Request) {
+  const searchParams = new URL(request.url).searchParams
+  const date = searchParams.get("date")?.trim() || undefined
+  if (date && !isValidLocalDate(date)) {
+    return NextResponse.json({ error: "Tanggal harus menggunakan format YYYY-MM-DD." }, { status: 400 })
+  }
+
+  const requestedSort = searchParams.get("sort") as MarketplaceSort | null
   try {
-    const { searchParams } = new URL(req.url)
-    const city = searchParams.get('city')
-    const query = searchParams.get('q')
-    const sortBy = searchParams.get('sort')
-
-    let sql = `
-      SELECT v.id, v.name, v.city, v.address, v.images, v.facilities,
-             MIN(c.price_per_hour) as min_price, MAX(c.price_per_hour) as max_price,
-             COALESCE(AVG(r.rating), 0) as avg_rating, COUNT(DISTINCT r.id) as review_count
-      FROM venues v
-      JOIN courts c ON c.venue_id = v.id
-      LEFT JOIN reviews r ON r.venue_id = v.id
-      WHERE v.approval_status = 'APPROVED'
-    `
-    const params: string[] = []
-    let paramIdx = 1
-
-    if (city) {
-      sql += ` AND LOWER(v.city) LIKE LOWER($${paramIdx})`
-      params.push(`%${city}%`)
-      paramIdx++
-    }
-    if (query) {
-      sql += ` AND (LOWER(v.name) LIKE LOWER($${paramIdx}) OR LOWER(v.city) LIKE LOWER($${paramIdx}))`
-      params.push(`%${query}%`)
-      paramIdx++
-    }
-
-    sql += ` GROUP BY v.id, v.name, v.city, v.address, v.images, v.facilities`
-
-    switch (sortBy) {
-      case 'price_asc': sql += ' ORDER BY min_price ASC'; break
-      case 'price_desc': sql += ' ORDER BY max_price DESC'; break
-      case 'rating': sql += ' ORDER BY avg_rating DESC'; break
-      default: sql += ' ORDER BY avg_rating DESC, review_count DESC'
-    }
-
-    const venues = await prisma.$queryRawUnsafe(sql, ...params)
-    return NextResponse.json({ venues })
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    const result = await getMarketplaceDiscovery({
+      city: searchParams.get("city")?.trim() || undefined,
+      date,
+      facility: searchParams.get("facility")?.trim() || undefined,
+      q: searchParams.get("q")?.trim() || undefined,
+      sort: requestedSort && sorts.has(requestedSort) ? requestedSort : "recommended",
+    })
+    return NextResponse.json(result)
+  } catch {
+    return NextResponse.json({ error: "Venue tidak dapat dimuat saat ini." }, { status: 500 })
   }
 }

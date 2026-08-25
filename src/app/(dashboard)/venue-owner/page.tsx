@@ -1,84 +1,15 @@
-import Link from "next/link"
-import { Plus, CalendarDays, TrendingUp, ListOrdered } from "lucide-react"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { Panel, SectionTitle } from "@/components/dashboard/panel"
+import { StatusBadge } from "@/components/dashboard/status-badge"
+import { Metric } from "@/components/ui/metric"
+import { PageHeader } from "@/components/ui/page-header"
+import { getOwnerOverview } from "@/lib/dashboard/owner-data"
 import { formatCurrency } from "@/lib/utils"
 
-export default function VenueOwnerDashboard() {
-  return (
-    <div className="space-y-6 pt-4 pb-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-h1 font-display text-ink">Dashboard</h1>
-          <p className="text-body text-ink-muted">Kelola venue kamu</p>
-        </div>
-        <Link href="/venue-owner/courts/new" className="btn-primary text-sm px-4 py-2 h-auto flex items-center gap-1.5">
-          <Plus className="w-4 h-4" />
-          Tambah
-        </Link>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-2 gap-3">
-        <Card>
-          <CardContent className="p-4 space-y-1">
-            <CalendarDays className="w-5 h-5 text-brand" />
-            <p className="text-h2 font-bold font-mono text-ink">4</p>
-            <p className="text-caption text-ink-muted">Booking Hari Ini</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 space-y-1">
-            <TrendingUp className="w-5 h-5 text-success" />
-            <p className="text-h2 font-bold font-mono text-ink">{formatCurrency(2800000)}</p>
-            <p className="text-caption text-ink-muted">Pendapatan Bulan Ini</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* My Venues */}
-      <div>
-        <h2 className="text-h2 font-display text-ink mb-3">Venue Saya</h2>
-        <div className="space-y-3">
-          {[
-            { name: "Padel House Kemang", status: "APPROVED", bookings: 12, revenue: 3200000 },
-            { name: "Padel Studio Menteng", status: "PENDING", bookings: 0, revenue: 0 },
-          ].map((venue) => (
-            <Link
-              key={venue.name}
-              href="/venue-owner/venues/1"
-              className="block bg-surface rounded-card shadow-card p-4 space-y-2"
-            >
-              <div className="flex items-start justify-between">
-                <h3 className="text-body font-semibold text-ink">{venue.name}</h3>
-                <Badge variant={venue.status === "APPROVED" ? "success" : "urgent"}>
-                  {venue.status === "APPROVED" ? "Aktif" : "Menunggu Verifikasi"}
-                </Badge>
-              </div>
-              <div className="flex gap-4 text-caption text-ink-muted">
-                <span>{venue.bookings} booking</span>
-                <span className="font-mono">{formatCurrency(venue.revenue)}</span>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </div>
-
-      {/* Quick nav */}
-      <div className="grid grid-cols-3 gap-3">
-        <Link href="/venue-owner/courts" className="bg-surface rounded-card shadow-card p-4 text-center space-y-1">
-          <ListOrdered className="w-5 h-5 text-brand mx-auto" />
-          <span className="text-caption text-ink">Lapangan</span>
-        </Link>
-        <Link href="/venue-owner/schedule" className="bg-surface rounded-card shadow-card p-4 text-center space-y-1">
-          <CalendarDays className="w-5 h-5 text-brand mx-auto" />
-          <span className="text-caption text-ink">Jadwal</span>
-        </Link>
-        <Link href="/venue-owner/reports" className="bg-surface rounded-card shadow-card p-4 text-center space-y-1">
-          <TrendingUp className="w-5 h-5 text-brand mx-auto" />
-          <span className="text-caption text-ink">Laporan</span>
-        </Link>
-      </div>
-    </div>
-  )
+export default async function VenueOwnerDashboard() {
+  const data = await getOwnerOverview()
+  return <main className="space-y-8"><PageHeader eyebrow="Venue workspace" title="Operasional venue" description="Pantau status venue, booking masuk, dan pembagian nilai pembayaran sandbox." />
+    <section className="grid gap-6 border-b border-border pb-8 sm:grid-cols-3"><Metric label="Gross lunas" value={formatCurrency(data.grossSettledRupiah)} /><Metric label="Komisi platform" value={formatCurrency(data.platformFeeRupiah)} /><Metric label="Net venue" value={formatCurrency(data.venueNetRupiah)} /></section>
+    <Panel><SectionTitle detail={`${data.venues.length} venue`}>Venue saya</SectionTitle><div className="divide-y divide-border">{data.venues.map((venue) => <article key={venue.id} className="flex flex-wrap items-center justify-between gap-4 py-4"><div><h2 className="font-display text-xl font-bold">{venue.name}</h2><p className="mt-1 text-xs text-ink-muted">{venue.city} · {venue.activeCourts} lapangan aktif</p>{venue.rejectionReason ? <p className="mt-2 text-xs text-error">{venue.rejectionReason}</p> : null}</div><StatusBadge status={venue.status} /></article>)}</div>{!data.venues.length ? <p className="py-8 text-sm text-ink-muted">Belum ada venue.</p> : null}</Panel>
+    <Panel><SectionTitle detail={`${data.bookings.length} terbaru`}>Booking masuk</SectionTitle><div className="divide-y divide-border">{data.bookings.map((booking) => <article key={booking.id} className="grid gap-3 py-4 sm:grid-cols-[1fr_auto_auto] sm:items-center"><div><p className="font-mono text-xs font-semibold">{booking.bookingCode}</p><p className="mt-1 text-sm font-semibold">{booking.venueName}</p></div><div className="flex gap-2"><StatusBadge status={booking.status} />{booking.paymentStatus ? <StatusBadge status={booking.paymentStatus} /> : null}</div><p className="font-mono font-semibold sm:text-right">{formatCurrency(booking.totalPriceRupiah)}</p></article>)}</div></Panel>
+  </main>
 }

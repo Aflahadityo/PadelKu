@@ -27,3 +27,7 @@ yarn-error.log*
 *.log
 *.tmp
 *.bak
+
+# Docker / self-hosted runtime
+.supabase/
+.env.docker

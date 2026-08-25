@@ -1,48 +1,30 @@
-import { User, Settings, LogOut, ChevronRight, Calendar, Star, HelpCircle } from "lucide-react"
-import Link from "next/link"
+import { revalidatePath } from "next/cache"
+import { MobileTabBar } from "@/components/shell/mobile-tab-bar"
+import { PlayerHeader } from "@/components/shell/player-header"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { PageHeader } from "@/components/ui/page-header"
+import { requireUser } from "@/lib/auth"
+import { getPlayerProfile, getPlayerReviews, updatePlayerProfile } from "@/lib/data/player"
 
-const menuItems = [
-  { icon: Calendar, label: "Booking Saya", href: "/bookings" },
-  { icon: Star, label: "Ulasan Saya", href: "/profile/reviews" },
-  { icon: Settings, label: "Pengaturan", href: "/profile/settings" },
-  { icon: HelpCircle, label: "Bantuan", href: "/profile/help" },
-]
+async function updateProfile(formData: FormData) {
+  "use server"
+  const user = await requireUser()
+  const fullName = String(formData.get("fullName") ?? "").trim()
+  const phone = String(formData.get("phone") ?? "").trim()
+  if (fullName.length < 2 || fullName.length > 100) return
+  if (phone && !/^\+?[0-9][0-9 -]{7,19}$/.test(phone)) return
+  await updatePlayerProfile(user.id, { fullName, phone: phone || null })
+  revalidatePath("/profile")
+}
 
-export default function ProfilePage() {
-  return (
-    <div className="space-y-6 pt-4 pb-8">
-      {/* User info */}
-      <div className="flex items-center gap-4 bg-surface rounded-card shadow-card p-5">
-        <div className="w-16 h-16 rounded-full bg-brand/20 flex items-center justify-center">
-          <User className="w-8 h-8 text-brand" />
-        </div>
-        <div>
-          <h1 className="text-h2 font-display text-ink">Rizky Pratama</h1>
-          <p className="text-body text-ink-muted">rizky@padelku.id</p>
-          <p className="text-caption text-brand font-medium">Player</p>
-        </div>
-      </div>
-
-      {/* Menu */}
-      <div className="bg-surface rounded-card shadow-card divide-y divide-border">
-        {menuItems.map(({ icon: Icon, label, href }) => (
-          <Link
-            key={href}
-            href={href}
-            className="flex items-center gap-3 p-4 active:bg-border/20 transition-colors"
-          >
-            <Icon className="w-5 h-5 text-ink-muted" />
-            <span className="text-body text-ink flex-1">{label}</span>
-            <ChevronRight className="w-5 h-5 text-ink-muted" />
-          </Link>
-        ))}
-      </div>
-
-      {/* Logout */}
-      <button className="flex items-center gap-3 p-4 w-full text-error">
-        <LogOut className="w-5 h-5" />
-        <span className="text-body font-medium">Keluar</span>
-      </button>
-    </div>
-  )
+export default async function ProfilePage() {
+  const user = await requireUser()
+  const [profile, reviews] = await Promise.all([getPlayerProfile(user.id), getPlayerReviews(user.id)])
+  return <div className="min-h-dvh bg-canvas pb-24 md:pb-16"><PlayerHeader user={{ email: profile.email, name: profile.fullName, role: "Player" }} /><main className="safe-area-x mx-auto max-w-3xl space-y-8 py-8"><PageHeader eyebrow="Akun player" title={profile.fullName} description={profile.email} />
+    <form action={updateProfile} className="grid gap-5 border-y border-border py-6 sm:grid-cols-2"><div className="space-y-2"><Label htmlFor="fullName">Nama lengkap</Label><Input id="fullName" name="fullName" defaultValue={profile.fullName} required minLength={2} maxLength={100} /></div><div className="space-y-2"><Label htmlFor="phone">Nomor telepon</Label><Input id="phone" name="phone" defaultValue={profile.phone ?? ""} /></div><Button type="submit" className="sm:col-span-2 sm:justify-self-start">Simpan profil</Button></form>
+    <section><h2 className="font-display text-2xl font-bold">Ulasan saya</h2><p className="mt-2 text-sm text-ink-muted">{reviews.length} ulasan venue tersimpan.</p></section>
+    <form action="/api/auth/logout" method="post"><Button type="submit" variant="destructive">Keluar dari akun</Button></form>
+  </main><MobileTabBar /></div>
 }
