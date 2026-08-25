@@ -2,6 +2,7 @@ FROM node:22-alpine AS deps
 
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV NEXT_BUILD_TARGET=standalone
 
 COPY package.json package-lock.json ./
 RUN npm ci

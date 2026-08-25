@@ -65,6 +65,8 @@ Endpoint full Docker:
 
 Semua port infrastruktur dibatasi ke loopback. Aplikasi terhubung ke service `api-gw` melalui network Compose dengan alias `supabase.localhost`. Data Postgres dan Storage memakai named volume agar I/O Docker Desktop Windows tidak bergantung pada bind mount NTFS yang lambat.
 
+Dockerfile mengaktifkan `NEXT_BUILD_TARGET=standalone` untuk menghasilkan server minimal. Jangan set variabel ini pada Vercel; Vercel harus memakai output Next.js default agar adapter deployment dapat membangun Functions dan output tracing secara native.
+
 Operasi harian:
 
 ```sh
