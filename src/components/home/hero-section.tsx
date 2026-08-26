@@ -100,7 +100,7 @@ export function HeroSection({ totalVenues = 18, selectedCity = "" }: HeroSection
               </a>
 
               <Link
-                href="/#community-matches"
+                href="/matches"
                 className="btn-secondary inline-flex h-12 items-center gap-2 px-5 text-sm font-bold shadow-2xs hover:border-brand/40"
               >
                 <Flame className="size-4 text-urgent" />

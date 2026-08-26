@@ -93,7 +93,7 @@ export default async function HomePage({ searchParams }: { searchParams: SearchP
       <PlayerFooter />
 
       {/* Mobile Tab Bar */}
-      <MobileTabBar />
+      <MobileTabBar userRole={user?.role} />
     </div>
   )
 }

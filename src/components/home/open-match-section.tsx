@@ -1,18 +1,17 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import {
   Calendar,
   Clock,
   Flame,
   MapPin,
-  Plus,
   Shield,
   Sparkles,
   Users,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
 
 interface OpenMatch {
   id: string
@@ -123,13 +122,15 @@ export function OpenMatchSection() {
             </p>
           </div>
 
-          <Button
-            onClick={() => alert("Fitur 'Buat Open Match Baru' segera hadir untuk semua member terverifikasi!")}
-            className="btn-turf shrink-0 text-xs font-bold shadow-xs"
-          >
-            <Plus className="size-4" />
-            <span>Buat Open Match Baru</span>
-          </Button>
+          <div className="flex items-center gap-2 shrink-0">
+            <Link
+              href="/matches"
+              className="btn-cta text-xs font-bold shadow-xs px-4 py-2.5 inline-flex items-center gap-1.5"
+            >
+              <Sparkles className="size-4 text-ink" />
+              <span>Buka Hub Open Match</span>
+            </Link>
+          </div>
         </div>
 
         {/* Filter Chips */}

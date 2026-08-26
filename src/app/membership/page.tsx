@@ -1,14 +1,24 @@
 "use client"
 
 import { useState } from "react"
-import { Crown, Check, Shield, HelpCircle } from "lucide-react"
-import { PlayerHeader } from "@/components/shell/player-header"
-import { PlayerFooter } from "@/components/shell/player-footer"
+import {
+  Check,
+  CheckCircle2,
+  Crown,
+  HelpCircle,
+  QrCode,
+  Shield,
+  X,
+} from "lucide-react"
 import { MobileTabBar } from "@/components/shell/mobile-tab-bar"
+import { PlayerFooter } from "@/components/shell/player-footer"
+import { PlayerHeader } from "@/components/shell/player-header"
 import { cn } from "@/lib/utils"
 
 export default function MembershipPage() {
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly")
+  const [selectedPlan, setSelectedPlan] = useState<{ name: string; price: string; period: string } | null>(null)
+  const [subscribedSuccess, setSubscribedSuccess] = useState<string | null>(null)
 
   const plans = [
     {
@@ -78,6 +88,12 @@ export default function MembershipPage() {
     },
   ]
 
+  const handleSubscribe = () => {
+    if (!selectedPlan) return
+    setSubscribedSuccess(`🎉 Selamat! Anda telah resmi menjadi member ${selectedPlan.name}. Benefit diskon & prioritas slot aktif sekarang di akun Anda.`)
+    setSelectedPlan(null)
+  }
+
   return (
     <div className="min-h-screen bg-canvas pb-24 md:pb-16 text-ink">
       <PlayerHeader />
@@ -127,6 +143,22 @@ export default function MembershipPage() {
             </button>
           </div>
         </div>
+
+        {subscribedSuccess && (
+          <div className="rounded-2xl border border-success/40 bg-success/10 p-5 text-xs font-bold text-success flex items-center justify-between animate-in fade-in-50">
+            <div className="flex items-center gap-2.5">
+              <CheckCircle2 className="size-5 shrink-0 stroke-[2.5]" />
+              <span>{subscribedSuccess}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSubscribedSuccess(null)}
+              className="text-ink-muted hover:text-ink"
+            >
+              <X className="size-4" />
+            </button>
+          </div>
+        )}
 
         {/* Pricing Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
@@ -183,12 +215,16 @@ export default function MembershipPage() {
                 <div className="pt-5 border-t border-border/80">
                   <button
                     type="button"
-                    onClick={() =>
-                      alert(`Anda memilih paket ${plan.name}. Fitur checkout membership segera aktif!`)
-                    }
+                    onClick={() => {
+                      if (plan.monthlyPrice === "Rp0") {
+                        alert("Akun Free Player sudah otomatis aktif pada profil Anda.")
+                      } else {
+                        setSelectedPlan({ name: plan.name, price, period: plan.period })
+                      }
+                    }}
                     className={cn(
                       "w-full py-3 rounded-xl text-xs font-bold transition-all shadow-xs",
-                      plan.isPopular ? "btn-cta" : "btn-secondary",
+                      plan.isPopular ? "btn-cta text-ink" : "btn-secondary",
                     )}
                   >
                     {plan.ctaText}
@@ -237,6 +273,65 @@ export default function MembershipPage() {
           </div>
         </section>
       </main>
+
+      {/* Subscription Checkout Modal Dialog */}
+      {selectedPlan && (
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-ink/70 p-4 backdrop-blur-sm animate-in fade-in-50"
+          onClick={() => setSelectedPlan(null)}
+        >
+          <div
+            className="relative max-h-[85vh] w-full max-w-md overflow-y-auto rounded-3xl border border-border bg-surface p-6 shadow-float space-y-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <div className="flex items-center gap-2">
+                <Crown className="size-5 text-brand" />
+                <h3 className="font-display text-base font-bold text-ink">
+                  Aktivasi {selectedPlan.name}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedPlan(null)}
+                className="grid size-8 place-items-center rounded-full border border-border hover:bg-surface-muted"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="rounded-2xl border border-brand/20 bg-brand/5 p-4 space-y-1">
+                <span className="font-mono text-xs font-bold text-brand uppercase">Paket Pilihan:</span>
+                <p className="font-display text-lg font-black text-ink">{selectedPlan.name}</p>
+                <p className="font-mono text-xl font-black text-brand">{selectedPlan.price} <span className="text-xs text-ink-muted font-normal">{selectedPlan.period}</span></p>
+              </div>
+
+              <div className="space-y-2 border-y border-border/80 py-3">
+                <span className="font-bold text-ink block">Metode Pembayaran Instan:</span>
+                <div className="flex items-center justify-between rounded-xl border border-brand/40 bg-surface p-3">
+                  <div className="flex items-center gap-2.5">
+                    <QrCode className="size-5 text-brand" />
+                    <div>
+                      <p className="font-bold text-ink">QRIS & Virtual Account</p>
+                      <p className="text-[0.625rem] text-ink-muted">GoPay, OVO, BCA, Mandiri, BRI, BNI</p>
+                    </div>
+                  </div>
+                  <span className="badge-optic text-[0.625rem] font-bold">OTOMATIS AKTIF</span>
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleSubscribe}
+              className="btn-cta w-full text-xs font-bold py-3.5 rounded-xl shadow-xs"
+            >
+              Bayar & Aktifkan Membership
+            </button>
+          </div>
+        </div>
+      )}
 
       <PlayerFooter />
       <MobileTabBar />

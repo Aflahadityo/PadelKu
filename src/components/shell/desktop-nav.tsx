@@ -11,11 +11,12 @@ export interface PlayerNavItem {
 }
 
 export const playerNavItems: PlayerNavItem[] = [
-  { href: "/", label: "Cari Venue" },
-  { href: "/#venue-list", label: "Jadwal Venue" },
-  { href: "/#community-matches", label: "Open Match", isHot: true },
-  { href: "/bookings", label: "Booking Saya" },
-  { href: "/membership", label: "Membership" },
+  { href: "/", label: "Cari Lapangan" },
+  { href: "/matches", label: "Open Match", isHot: true },
+  { href: "/coaches", label: "Pelatih Pro" },
+  { href: "/equipment", label: "Sewa Alat" },
+  { href: "/community", label: "Komunitas" },
+  { href: "/membership", label: "VIP Pass" },
 ]
 
 export interface DesktopNavProps {

@@ -205,12 +205,14 @@ export function PlayerHeader({ className, navItems, user }: PlayerHeaderProps) {
             {/* Navigation Links */}
             <nav className="grid gap-1">
               {[
-                { href: "/", label: "Cari Venue Padel", icon: Search },
-                { href: "/#venue-list", label: "Jadwal Venue", icon: Grid },
-                { href: "/#community-matches", label: "Open Match (Komunitas)", icon: Sparkles, isHot: true },
-                { href: "/bookings", label: "Booking Saya", icon: Calendar },
+                { href: "/", label: "Cari Lapangan Padel", icon: Search },
+                { href: "/matches", label: "Open Match (Komunitas)", icon: Sparkles, isHot: true },
+                { href: "/coaches", label: "Pelatih Padel Bersertifikasi", icon: User },
+                { href: "/equipment", label: "Sewa Raket & Alat", icon: Grid },
+                { href: "/community", label: "Leaderboard & Turnamen", icon: Crown },
                 { href: "/membership", label: "Membership VIP", icon: Crown },
-                { href: "/profile", label: "Profil Pemain", icon: User },
+                { href: "/bookings", label: "Tiket & Booking Saya", icon: Calendar },
+                { href: "/help", label: "Pusat Bantuan & FAQ", icon: Search },
               ].map(({ href, label, icon: Icon, isHot }) => {
                 const active = isRouteActive(pathname, href)
                 return (

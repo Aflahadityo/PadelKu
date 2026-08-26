@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { ArrowRight, Building2, Heart, Mail, Phone, ShieldCheck } from "lucide-react"
+import { ArrowRight, Building2, Heart, Mail, ShieldCheck } from "lucide-react"
 import { BrandMark } from "@/components/shell/brand-mark"
 
 export function PlayerFooter() {
@@ -44,23 +44,33 @@ export function PlayerFooter() {
             </div>
           </div>
 
-          {/* Col 2: Pemain */}
+          {/* Col 2: Pemain & Komunitas */}
           <div className="space-y-3">
-            <h4 className="font-display text-sm font-bold text-ink">Untuk Pemain</h4>
+            <h4 className="font-display text-sm font-bold text-ink">Eksplorasi Pemain</h4>
             <ul className="space-y-2 text-xs text-ink-muted">
               <li>
                 <Link href="/" className="hover:text-brand transition-colors">
-                  Cari Venue Padel
+                  Cari Lapangan Padel
                 </Link>
               </li>
               <li>
-                <Link href="/#community-matches" className="hover:text-brand transition-colors">
-                  Open Match Komunitas
+                <Link href="/matches" className="hover:text-brand transition-colors">
+                  Open Match & Sparring
                 </Link>
               </li>
               <li>
-                <Link href="/bookings" className="hover:text-brand transition-colors">
-                  Booking & E-Tiket
+                <Link href="/coaches" className="hover:text-brand transition-colors">
+                  Pelatih Padel Bersertifikasi
+                </Link>
+              </li>
+              <li>
+                <Link href="/equipment" className="hover:text-brand transition-colors">
+                  Sewa Raket & Alat
+                </Link>
+              </li>
+              <li>
+                <Link href="/community" className="hover:text-brand transition-colors">
+                  Leaderboard & Turnamen
                 </Link>
               </li>
               <li>
@@ -108,8 +118,18 @@ export function PlayerFooter() {
             <h4 className="font-display text-sm font-bold text-ink">Bantuan & Mitra</h4>
             <ul className="space-y-2 text-xs text-ink-muted">
               <li>
+                <Link href="/partner" className="hover:text-brand transition-colors">
+                  Kemitraan & Estimasi ROI
+                </Link>
+              </li>
+              <li>
                 <Link href="/venue-owner" className="hover:text-brand transition-colors">
                   Portal Pemilik Venue
+                </Link>
+              </li>
+              <li>
+                <Link href="/help" className="hover:text-brand transition-colors">
+                  Pusat Bantuan & FAQ
                 </Link>
               </li>
               <li>
@@ -120,10 +140,6 @@ export function PlayerFooter() {
               <li className="flex items-center gap-1.5 pt-1 text-ink">
                 <Mail className="size-3.5 text-brand" />
                 <span>support@padelku.id</span>
-              </li>
-              <li className="flex items-center gap-1.5 text-ink">
-                <Phone className="size-3.5 text-brand" />
-                <span>+62 812-8899-0011</span>
               </li>
             </ul>
           </div>
